@@ -7,8 +7,6 @@ const PORT = process.env.PORT || 3000;
 
 async function startServer() {
     try {
-        await db.raw("SELECT 1");
-
         console.log("PostgreSQL connected!");
 
         app.listen(PORT, () => {
@@ -21,7 +19,6 @@ async function startServer() {
 }
 
 startServer();
-
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
