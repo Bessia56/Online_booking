@@ -3,7 +3,7 @@ const app = express();
 
 const patientsRoutes = require("./src/routes/patients.routes");
 const doctorsRoutes = require("./src/routes/doctors.routes");
-
+const servicesRoutes = require("./src/routes/services.routes");
 
 
 app.use(express.json());
@@ -11,6 +11,7 @@ app.use(express.json());
 
 app.use("/patients", patientsRoutes);
 app.use("/doctors", doctorsRoutes);
+app.use("/services", servicesRoutes);
 
 
 module.exports = app;
