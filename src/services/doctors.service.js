@@ -1,0 +1,74 @@
+const db = require("../config/db");
+
+/**
+ * Создаёт нового врача в базе данных.
+ *
+ * @param {Object} doctorData - Данные нового врача.
+ * @returns {Promise<Object>} Созданная запись врача.
+ */
+async function createDoctor(doctorData) {
+    const [doctor] = await db("doctors") // [doctor] - деструктуризация массива
+        .insert(doctorData)
+        .returning("*");
+
+    return doctor;
+}
+
+/**
+ * Получает список всех врачей.
+ *
+ * @returns {Promise<Object[]>} Массив врачей.
+ */
+async function listDoctors() {
+    const doctors = await db("doctors").select("*");
+    return doctors;
+}
+
+/**
+ * Получает врача по ID.
+ *
+ * @param {number|string} id - Идентификатор врача.
+ * @returns {Promise<Object|undefined>} Найденный врач или undefined.
+ */
+async function getDoctorById(id) {
+    const [doctor] = await db("doctors").select("*").where({ id });
+    return doctor;
+}
+
+/**
+ * Частично обновляет данные врача.
+ *
+ * @param {number|string} id - Идентификатор врача.
+ * @param {Object} updateData - Поля, которые необходимо обновить.
+ * @returns {Promise<Object|undefined>} Обновлённый врач или undefined.
+ */
+async function updateDoctor(id, updateData) {
+    const [doctor] = await db("doctors")
+        .where({ id })
+        .update(updateData)
+        .returning("*");
+    return doctor;
+}
+
+/**
+ * Удаляет врача по ID.
+ *
+ * @param {number|string} id - Идентификатор врача.
+ * @returns {Promise<Object|undefined>} Деактивированный врач или undefined.
+ */
+async function deleteDoctor(id) {
+    const [doctor] = await db("doctors")
+        .where({ id })
+        .update({ is_active: false })
+        .returning("*");
+
+    return doctor;
+}
+
+module.exports = {
+    createDoctor,
+    listDoctors,
+    getDoctorById,
+    updateDoctor,
+    deleteDoctor,
+};

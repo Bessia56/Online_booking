@@ -3,6 +3,7 @@ const router = express.Router();
 
 const patientsController = require("../controllers/patients.controller");
 
+
 /**
  * Маршруты для управления пациентами.
  *
