@@ -12,6 +12,7 @@ app.use(express.json());
 app.use("/patients", patientsRoutes);
 app.use("/doctors", doctorsRoutes);
 app.use("/services", servicesRoutes);
+app.use("/doctors/:doctorId/services", doctorServicesRoutes);
 
 
 module.exports = app;
