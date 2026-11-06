@@ -9,7 +9,6 @@ const db = require("../config/db");
  * @returns {Promise<Object>} Созданная запись связи.
  */
 async function createDoctorService(doctorId, serviceId, durationMinutes) {
-
     if (!doctorId || !serviceId || durationMinutes == null) {
         throw new Error("Missing required fields");
     }
@@ -39,7 +38,7 @@ async function createDoctorService(doctorId, serviceId, durationMinutes) {
     const existingRelation = await db("doctor_services")
         .where({
             doctor_id: doctorId,
-            service_id: serviceId
+            service_id: serviceId,
         })
         .first();
 
@@ -51,7 +50,7 @@ async function createDoctorService(doctorId, serviceId, durationMinutes) {
         .insert({
             doctor_id: doctorId,
             service_id: serviceId,
-            duration_minutes: durationMinutes
+            duration_minutes: durationMinutes,
         })
         .returning("*");
 
@@ -59,12 +58,33 @@ async function createDoctorService(doctorId, serviceId, durationMinutes) {
 }
 
 /**
- * Получает список всех связей врачей и услуг.
+ * Получает список всех активных связей врачей и услуг.
  *
  * @returns {Promise<Object[]>} Массив связей.
  */
 async function listDoctorServices() {
-    const doctorServices = await db("doctor_services").select("*");
+    const doctorServices = await db("doctor_services")
+        .join(
+            "doctors", 
+            "doctor_services.doctor_id", 
+            "doctors.id")
+        .join(
+            "services",
+            "doctor_services.service_id",
+            "services.id")
+        .where({
+            "doctors.is_active": true,
+            "services.is_active": true,
+        })
+        .select(
+            "doctor_services.id",
+            "doctor_services.doctor_id",
+            "doctor_services.service_id",
+            "services.name",
+            "services.price",
+            "doctor_services.duration_minutes",
+        );
+
     return doctorServices;
 }
 
