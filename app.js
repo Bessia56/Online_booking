@@ -16,10 +16,11 @@ app.use("/doctors/:doctorId/services", doctorServicesRoutes);
 
 app.use((err, req, res, next) => {
     if (err.name === "ValidationError") {
-        console.error("[VALIDATION]", req.url, err.message);
+        console.error("[VALIDATION]", req.url, err.errors);
 
         return res.status(400).json({
-            error: err.message
+            name: "Ошибка данных",
+            errors: err.errors
         });
     }
 
