@@ -14,5 +14,28 @@ app.use("/doctors", doctorsRoutes);
 app.use("/services", servicesRoutes);
 app.use("/doctors/:doctorId/services", doctorServicesRoutes);
 
+app.use((err, req, res, next) => {
+    if (err.name === "ValidationError") {
+        console.error("[VALIDATION]", req.url, err.message);
 
-module.exports = app;
+        return res.status(400).json({
+            error: err.message
+        });
+    }
+
+    if (err.statusCode) {
+        console.error("[APPLICATION ERROR]", req.url, err.message);
+
+        return res.status(err.statusCode).json({
+            error: err.message
+        });
+    }
+
+    console.error("[INTERNAL ERROR]", req.url, err);
+
+    return res.status(500).json({
+        error: "Внутренняя ошибка сервера"
+    });
+});
+
+module.exports = app;   
