@@ -64,14 +64,8 @@ async function createDoctorService(doctorId, serviceId, durationMinutes) {
  */
 async function listDoctorServices() {
     const doctorServices = await db("doctor_services")
-        .join(
-            "doctors", 
-            "doctor_services.doctor_id", 
-            "doctors.id")
-        .join(
-            "services",
-            "doctor_services.service_id",
-            "services.id")
+        .join("doctors", "doctor_services.doctor_id", "doctors.id")
+        .join("services", "doctor_services.service_id", "services.id")
         .where({
             "doctors.is_active": true,
             "services.is_active": true,
@@ -89,30 +83,88 @@ async function listDoctorServices() {
 }
 
 /**
- * Получает связь врача и услуги по ID.
+ * Получает связь врача и услуги по ID врача и ID услуги.
  *
- * @param {number|string} id - Идентификатор связи.
+ * @param {number|string} doctorId - ID врача.
+ * @param {number|string} serviceId - ID услуги.
  * @returns {Promise<Object|undefined>} Найденная связь или undefined.
  */
-async function getDoctorServiceById(id) {
-    const [doctorService] = await db("doctor_services")
-        .select("*")
-        .where({ id });
+async function getDoctorServiceById(doctorId, serviceId) {
+    const doctorService = await db("doctor_services")
+        .join("doctors", "doctor_services.doctor_id", "doctors.id")
+        .join("services", "doctor_services.service_id", "services.id")
+        .where({
+            "doctors.is_active": true,
+            "services.is_active": true,
+            "doctor_services.doctor_id": doctorId,
+            "doctor_services.service_id": serviceId,
+        })
+        .select(
+            "doctor_services.id",
+            "doctor_services.doctor_id",
+            "doctor_services.service_id",
+            "services.name",
+            "services.price",
+            "doctor_services.duration_minutes",
+        )
+        .first();
+
     return doctorService;
 }
 
 /**
- * Частично обновляет данные связи врача и услуги.
+ * Частично обновляет параметры связи врача и услуги.
  *
- * @param {number|string} id - Идентификатор связи.
- * @param {Object} updateData - Поля, которые необходимо обновить.
+ * @param {number|string} doctorId - ID врача.
+ * @param {number|string} serviceId - ID услуги.
+ * @param {Object} updateData - Данные для обновления.
  * @returns {Promise<Object|undefined>} Обновлённая связь или undefined.
  */
-async function updateDoctorService(id, updateData) {
+async function updateDoctorService(doctorId, serviceId, updateData) {
+    // Проверка входных данных
+    if (updateData.duration_minutes === undefined) {
+        throw new Error("duration_minutes is required");
+    }
+
+
+    // Проверка, что duration_minutes является положительным числом
+    if (
+        !Number.isInteger(updateData.duration_minutes) ||
+        updateData.duration_minutes <= 0
+    ) {
+        throw new Error("duration_minutes must be a positive integer");
+    }
+
+
+    // Проверка существования и активности врача
+    const doctor = await db("doctors")
+        .where({ id: doctorId, is_active: true })
+        .first();
+
+    if (!doctor) {
+        throw new Error("Doctor not found or inactive");
+    }
+
+
+    const service = await db("services")
+        .where({ id: serviceId, is_active: true })
+        .first();
+
+    if (!service) {
+        throw new Error("Service not found or inactive");
+    }
+
+    
     const [doctorService] = await db("doctor_services")
-        .where({ id })
-        .update(updateData)
+        .where({
+            doctor_id: doctorId,
+            service_id: serviceId,
+        })
+        .update({
+            duration_minutes: updateData.duration_minutes,
+        })
         .returning("*");
+
     return doctorService;
 }
 
@@ -134,7 +186,7 @@ async function deleteDoctorService(id) {
 module.exports = {
     createDoctorService,
     listDoctorServices,
-    getDoctorServiceById,
+    listDoctorServicesByDoctorId,
     updateDoctorService,
     deleteDoctorService,
 };

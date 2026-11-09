@@ -15,7 +15,7 @@ async function createDoctorService(req, res, next) {
         const doctorService = await doctorServicesService.createDoctorService(
             req.params.doctorId,
             req.body.service_id,
-            req.body.duration_minutes
+            req.body.duration_minutes,
         );
 
         return res.status(201).json(doctorService);
@@ -42,7 +42,7 @@ async function listDoctorServices(req, res, next) {
 }
 
 /**
- * Возвращает связь врача и услуги по её ID.
+ * Возвращает список связей врача и услуг по ID врача.
  *
  * ID извлекается из параметров маршрута req.params.
  *
@@ -53,20 +53,23 @@ async function listDoctorServices(req, res, next) {
  */
 async function getDoctorServiceById(req, res, next) {
     try {
-        const doctorService = await doctorServicesService.getDoctorServiceById(req.params.id);
+        const doctorService = await doctorServicesService.getDoctorServiceById(
+            req.params.doctorId,
+            req.params.serviceId,
+        );
         if (!doctorService) {
             return res.status(404).json({ error: "Doctor service not found" });
         }
-        res.status(200).json(doctorService);
+        return res.status(200).json(doctorService);
     } catch (error) {
         next(error);
     }
 }
 
 /**
- * Частично обновляет данные связи врача и услуги.
+ * Изменяет параметр продолжительность приема уже существующей связи ID врача.
  *
- * ID извлекается из req.params, новые данные — из req.body.
+ * ID извлекается из параметров маршрута req.params.
  *
  * @param {import("express").Request} req - HTTP-запрос.
  * @param {import("express").Response} res - HTTP-ответ.
@@ -76,7 +79,8 @@ async function getDoctorServiceById(req, res, next) {
 async function updateDoctorService(req, res, next) {
     try {
         const doctorService = await doctorServicesService.updateDoctorService(
-            req.params.id,
+            req.params.doctorId,
+            req.params.serviceId,
             req.body,
         );
 
@@ -99,12 +103,16 @@ async function updateDoctorService(req, res, next) {
  */
 async function deleteDoctorService(req, res, next) {
     try {
-        const doctorService = await doctorServicesService.deleteDoctorService(req.params.id);
+        const doctorService = await doctorServicesService.deleteDoctorService(
+            req.params.id,
+        );
 
         if (!doctorService) {
             return res.status(404).json({ error: "Doctor service not found" });
         }
-        res.status(200).json({ message: "Doctor service deleted successfully" });
+        res.status(200).json({
+            message: "Doctor service deleted successfully",
+        });
     } catch (error) {
         next(error);
     }

@@ -14,8 +14,8 @@ const doctorServicesController = require("../controllers/doctorServices.controll
  */
 router.post("/", doctorServicesController.createDoctorService);
 router.get("/", doctorServicesController.listDoctorServices);
-router.get("/:id", doctorServicesController.getDoctorServiceById);
-router.patch("/:id", doctorServicesController.updateDoctorService);
-router.delete("/:id", doctorServicesController.deleteDoctorService);
+router.get("/:serviceId", doctorServicesController.getDoctorServiceById);
+router.patch("/:serviceId", doctorServicesController.updateDoctorService);
+router.delete("/:serviceId", doctorServicesController.deleteDoctorService);
 
 module.exports = router;
