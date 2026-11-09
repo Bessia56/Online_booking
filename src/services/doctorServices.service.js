@@ -121,20 +121,6 @@ async function getDoctorServiceById(doctorId, serviceId) {
  * @returns {Promise<Object|undefined>} Обновлённая связь или undefined.
  */
 async function updateDoctorService(doctorId, serviceId, updateData) {
-    // Проверка входных данных
-    if (updateData.duration_minutes === undefined) {
-        throw new Error("duration_minutes is required");
-    }
-
-
-    // Проверка, что duration_minutes является положительным числом
-    if (
-        !Number.isInteger(updateData.duration_minutes) ||
-        updateData.duration_minutes <= 0
-    ) {
-        throw new Error("duration_minutes must be a positive integer");
-    }
-
 
     // Проверка существования и активности врача
     const doctor = await db("doctors")
@@ -154,7 +140,7 @@ async function updateDoctorService(doctorId, serviceId, updateData) {
         throw new Error("Service not found or inactive");
     }
 
-    
+
     const [doctorService] = await db("doctor_services")
         .where({
             doctor_id: doctorId,

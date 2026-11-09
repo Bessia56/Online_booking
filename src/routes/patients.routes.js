@@ -1,7 +1,12 @@
 const express = require("express");
 const router = express.Router();
+const validate = require("../validators/validate");
 
 const patientsController = require("../controllers/patients.controller");
+const {
+    createPatientSchema,
+    updatePatientSchema
+} = require("../validators/patients.validator");
 
 
 /**
@@ -13,10 +18,10 @@ const patientsController = require("../controllers/patients.controller");
  * PATCH  /:id      — частичное обновление пациента.
  * DELETE /:id      — удаление пациента.
  */
-router.post("/", patientsController.createPatient);
+router.post("/", validate(createPatientSchema), patientsController.createPatient);
 router.get("/", patientsController.listPatients);
 router.get("/:id", patientsController.getPatientById);
-router.patch("/:id", patientsController.updatePatient);
+router.patch("/:id", validate(updatePatientSchema), patientsController.updatePatient);
 router.delete("/:id", patientsController.deletePatient);
 
 

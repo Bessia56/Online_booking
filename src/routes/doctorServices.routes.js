@@ -1,7 +1,12 @@
 const express = require("express");
 const router = express.Router();
+const validate = require("../validators/validate");
 
 const doctorServicesController = require("../controllers/doctorServices.controller");
+const {
+    createDoctorServiceSchema,
+    updateDoctorServiceSchema
+} = require("../validators/doctorServices.validator");
 
 /**
  * Маршруты для управления связями врачей и услуг.
@@ -12,10 +17,18 @@ const doctorServicesController = require("../controllers/doctorServices.controll
  * PATCH  /:id      — Изменить параметры связи.
  * DELETE /:id      — Удалить привязку услуги.
  */
-router.post("/", doctorServicesController.createDoctorService);
+router.post(
+    "/",
+    validate(createDoctorServiceSchema),
+    doctorServicesController.createDoctorService
+);
 router.get("/", doctorServicesController.listDoctorServices);
 router.get("/:serviceId", doctorServicesController.getDoctorServiceById);
-router.patch("/:serviceId", doctorServicesController.updateDoctorService);
+router.patch(
+    "/:serviceId",
+    validate(updateDoctorServiceSchema),
+    doctorServicesController.updateDoctorService
+);
 router.delete("/:serviceId", doctorServicesController.deleteDoctorService);
 
 module.exports = router;

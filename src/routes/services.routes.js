@@ -1,8 +1,12 @@
 const express = require("express");
 const router = express.Router();
+const validate = require("../validators/validate");
 
 const servicesController = require("../controllers/services.controller");
-
+const {
+    createServiceSchema,
+    updateServiceSchema,
+} = require("../validators/services.validator");
 
 /**
  * Маршруты для управления услугами.
@@ -13,11 +17,10 @@ const servicesController = require("../controllers/services.controller");
  * PATCH  /:id      — частичное обновление услуги.
  * DELETE /:id      — удаление услуги.
  */
-router.post("/", servicesController.createService);
+router.post("/", validate(createServiceSchema), servicesController.createService);
 router.get("/", servicesController.listServices);
 router.get("/:id", servicesController.getServiceById);
-router.patch("/:id", servicesController.updateService);
+router.patch("/:id", validate(updateServiceSchema), servicesController.updateService);
 router.delete("/:id", servicesController.deleteService);
-
 
 module.exports = router;
