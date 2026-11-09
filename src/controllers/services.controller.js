@@ -1,4 +1,4 @@
-const servicesService = require("../services/services.service");
+const servicesService = require("../model/services.model");
 
 /**
  * Создаёт новую услугу.
@@ -11,13 +11,9 @@ const servicesService = require("../services/services.service");
  * @returns {Promise<import("express").Response | void>}
  */
 async function createService(req, res, next) {
-    try {
-        const service = await servicesService.createService(req.body);
+    const service = await servicesService.createService(req.body);
 
-        res.status(201).json(service);
-    } catch (error) {
-        next(error);
-    }
+    res.status(201).json(service);
 }
 
 /**
@@ -29,12 +25,8 @@ async function createService(req, res, next) {
  * @returns {Promise<import("express").Response | void>}
  */
 async function listServices(req, res, next) {
-    try {
-        const services = await servicesService.listServices();
-        res.status(200).json(services);
-    } catch (error) {
-        next(error);
-    }
+    const services = await servicesService.listServices();
+    res.status(200).json(services);
 }
 
 /**
@@ -48,15 +40,11 @@ async function listServices(req, res, next) {
  * @returns {Promise<import("express").Response | void>}
  */
 async function getServiceById(req, res, next) {
-    try {
-        const service = await servicesService.getServiceById(req.params.id);
-        if (!service) {
-            return res.status(404).json({ error: "Service not found" });
-        }
-        res.status(200).json(service);
-    } catch (error) {
-        next(error);
+    const service = await servicesService.getServiceById(req.params.id);
+    if (!service) {
+        return res.status(404).json({ error: "Service not found" });
     }
+    res.status(200).json(service);
 }
 
 /**
@@ -70,16 +58,15 @@ async function getServiceById(req, res, next) {
  * @returns {Promise<import("express").Response | void>}
  */
 async function updateService(req, res, next) {
-    try {
-        const service = await servicesService.updateService(req.params.id, req.body);
-        
-        if (!service) {
-            return res.status(404).json({ error: "Service not found" });
-        }
-        res.status(200).json(service);
-    } catch (error) {
-        next(error);
+    const service = await servicesService.updateService(
+        req.params.id,
+        req.body,
+    );
+
+    if (!service) {
+        return res.status(404).json({ error: "Service not found" });
     }
+    res.status(200).json(service);
 }
 
 /**
@@ -91,16 +78,12 @@ async function updateService(req, res, next) {
  * @returns {Promise<import("express").Response | void>}
  */
 async function deleteService(req, res, next) {
-    try {
-        const service = await servicesService.deleteService(req.params.id);
-        
-        if (!service) {
-            return res.status(404).json({ error: "Service not found" });
-        }
-        res.status(200).json({ message: "Service deleted successfully" });
-    } catch (error) {
-        next(error);
+    const service = await servicesService.deleteService(req.params.id);
+
+    if (!service) {
+        return res.status(404).json({ error: "Service not found" });
     }
+    res.status(200).json({ message: "Service deleted successfully" });
 }
 
 module.exports = {
@@ -108,6 +91,5 @@ module.exports = {
     listServices,
     getServiceById,
     updateService,
-    deleteService
+    deleteService,
 };
-

@@ -1,4 +1,4 @@
-const doctorServicesService = require("../services/doctorServices.service");
+const doctorServicesService = require("../model/doctorServices.model");
 
 /**
  * Создаёт новую связь врача и услуги.
@@ -11,17 +11,13 @@ const doctorServicesService = require("../services/doctorServices.service");
  * @returns {Promise<import("express").Response | void>}
  */
 async function createDoctorService(req, res, next) {
-    try {
-        const doctorService = await doctorServicesService.createDoctorService(
-            req.params.doctorId,
-            req.body.service_id,
-            req.body.duration_minutes,
-        );
+    const doctorService = await doctorServicesService.createDoctorService(
+        req.params.doctorId,
+        req.body.service_id,
+        req.body.duration_minutes,
+    );
 
-        return res.status(201).json(doctorService);
-    } catch (error) {
-        return next(error);
-    }
+    return res.status(201).json(doctorService);
 }
 
 /**
@@ -33,12 +29,8 @@ async function createDoctorService(req, res, next) {
  * @returns {Promise<import("express").Response | void>}
  */
 async function listDoctorServices(req, res, next) {
-    try {
-        const doctorServices = await doctorServicesService.listDoctorServices();
-        res.status(200).json(doctorServices);
-    } catch (error) {
-        next(error);
-    }
+    const doctorServices = await doctorServicesService.listDoctorServices();
+    res.status(200).json(doctorServices);
 }
 
 /**
@@ -52,18 +44,14 @@ async function listDoctorServices(req, res, next) {
  * @returns {Promise<import("express").Response | void>}
  */
 async function getDoctorServiceById(req, res, next) {
-    try {
-        const doctorService = await doctorServicesService.getDoctorServiceById(
-            req.params.doctorId,
-            req.params.serviceId,
-        );
-        if (!doctorService) {
-            return res.status(404).json({ error: "Doctor service not found" });
-        }
-        return res.status(200).json(doctorService);
-    } catch (error) {
-        next(error);
+    const doctorService = await doctorServicesService.getDoctorServiceById(
+        req.params.doctorId,
+        req.params.serviceId,
+    );
+    if (!doctorService) {
+        return res.status(404).json({ error: "Doctor service not found" });
     }
+    return res.status(200).json(doctorService);
 }
 
 /**
@@ -77,20 +65,16 @@ async function getDoctorServiceById(req, res, next) {
  * @returns {Promise<import("express").Response | void>}
  */
 async function updateDoctorService(req, res, next) {
-    try {
-        const doctorService = await doctorServicesService.updateDoctorService(
-            req.params.doctorId,
-            req.params.serviceId,
-            req.body,
-        );
+    const doctorService = await doctorServicesService.updateDoctorService(
+        req.params.doctorId,
+        req.params.serviceId,
+        req.body,
+    );
 
-        if (!doctorService) {
-            return res.status(404).json({ error: "Doctor service not found" });
-        }
-        res.status(200).json(doctorService);
-    } catch (error) {
-        next(error);
+    if (!doctorService) {
+        return res.status(404).json({ error: "Doctor service not found" });
     }
+    res.status(200).json(doctorService);
 }
 
 /**
@@ -102,20 +86,16 @@ async function updateDoctorService(req, res, next) {
  * @returns {Promise<import("express").Response | void>}
  */
 async function deleteDoctorService(req, res, next) {
-    try {
-        const doctorService = await doctorServicesService.deleteDoctorService(
-            req.params.id,
-        );
+    const doctorService = await doctorServicesService.deleteDoctorService(
+        req.params.id,
+    );
 
-        if (!doctorService) {
-            return res.status(404).json({ error: "Doctor service not found" });
-        }
-        res.status(200).json({
-            message: "Doctor service deleted successfully",
-        });
-    } catch (error) {
-        next(error);
+    if (!doctorService) {
+        return res.status(404).json({ error: "Doctor service not found" });
     }
+    res.status(200).json({
+        message: "Doctor service deleted successfully",
+    });
 }
 
 module.exports = {
