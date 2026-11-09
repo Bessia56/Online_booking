@@ -1,12 +1,12 @@
 const express = require("express");
 const router = express.Router();
-const validate = require("../validators/validate");
+const validate = require("../validator/validate");
 
 const patientsController = require("../controllers/patients.controller");
 const {
     createPatientSchema,
     updatePatientSchema
-} = require("../validators/patients.validator");
+} = require("../validator/patients.validator");
 
 
 /**
