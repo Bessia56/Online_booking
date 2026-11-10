@@ -12,7 +12,7 @@ const doctorServicesModel = require("../model/doctorServices.model");
  * @returns {Promise<import("express").Response | void>}
  */
 async function createDoctorService(req, res) {
-    const doctorService = await doctorServicesService.createDoctorService(
+    const doctorService = await doctorServicesModel.createDoctorService(
         req.params.doctorId,
         req.body.service_id,
         req.body.duration_minutes,
