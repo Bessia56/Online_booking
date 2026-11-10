@@ -1,12 +1,12 @@
 const express = require("express");
 const router = express.Router();
-const validate = require("../validators/validate");
+const validate = require("../validator/validate");
 
 const doctorsController = require("../controllers/doctors.controller");
 const {
     createDoctorSchema,
     updateDoctorSchema,
-} = require("../validators/doctors.validator");
+} = require("../validator/doctors.validator");
 
 /**
  * Маршруты для управления врачами.

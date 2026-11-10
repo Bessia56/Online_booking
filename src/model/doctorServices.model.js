@@ -3,21 +3,16 @@ const db = require("../config/db");
 /**
  * Создаёт новую связь врача и услуги.
  *
+ * Если связь уже существует, но неактивна,
+ * восстанавливает её.
+ *
  * @param {number} doctorId - ID врача.
  * @param {number} serviceId - ID услуги.
  * @param {number} durationMinutes - Продолжительность услуги в минутах.
- * @returns {Promise<Object>} Созданная запись связи.
+ * @returns {Promise<Object>} Созданная или восстановленная связь.
  */
 async function createDoctorService(doctorId, serviceId, durationMinutes) {
-    if (!doctorId || !serviceId || durationMinutes == null) {
-        throw new Error("Missing required fields");
-    }
-
-    if (durationMinutes <= 0) {
-        throw new Error("Duration must be greater than 0");
-    }
-
-    //Проверка существования врача и услуги
+    // Проверка существования и активности врача
     const doctor = await db("doctors")
         .where({ id: doctorId, is_active: true })
         .first();
@@ -26,6 +21,7 @@ async function createDoctorService(doctorId, serviceId, durationMinutes) {
         throw new Error("Doctor not found or inactive");
     }
 
+    // Проверка существования и активности услуги
     const service = await db("services")
         .where({ id: serviceId, is_active: true })
         .first();
@@ -34,7 +30,7 @@ async function createDoctorService(doctorId, serviceId, durationMinutes) {
         throw new Error("Service not found or inactive");
     }
 
-    //Проверка существования записи
+    // Проверка существующей связи
     const existingRelation = await db("doctor_services")
         .where({
             doctor_id: doctorId,
@@ -42,15 +38,31 @@ async function createDoctorService(doctorId, serviceId, durationMinutes) {
         })
         .first();
 
+    // Если связь уже активна, возвращаем ошибку
     if (existingRelation) {
-        throw new Error("This service is already assigned to the doctor");
+        if (existingRelation.is_active) {
+            throw new Error("This service is already assigned to the doctor");
+        }
+
+        // Если связь неактивна, восстанавливаем её
+        const [reactivatedRelation] = await db("doctor_services")
+            .where({ id: existingRelation.id })
+            .update({
+                duration_minutes: durationMinutes,
+                is_active: true,
+            })
+            .returning("*");
+
+        return reactivatedRelation;
     }
 
+    // Создание новой связи
     const [doctorService] = await db("doctor_services")
         .insert({
             doctor_id: doctorId,
             service_id: serviceId,
             duration_minutes: durationMinutes,
+            is_active: true,
         })
         .returning("*");
 
@@ -62,13 +74,15 @@ async function createDoctorService(doctorId, serviceId, durationMinutes) {
  *
  * @returns {Promise<Object[]>} Массив связей.
  */
-async function listDoctorServices() {
+async function listDoctorServices(doctorId) {
     const doctorServices = await db("doctor_services")
         .join("doctors", "doctor_services.doctor_id", "doctors.id")
         .join("services", "doctor_services.service_id", "services.id")
         .where({
+            "doctor_services.doctor_id": doctorId,
             "doctors.is_active": true,
             "services.is_active": true,
+            "doctor_services.is_active": true,
         })
         .select(
             "doctor_services.id",
@@ -98,6 +112,7 @@ async function getDoctorServiceById(doctorId, serviceId) {
             "services.is_active": true,
             "doctor_services.doctor_id": doctorId,
             "doctor_services.service_id": serviceId,
+            "doctor_services.is_active": true,
         })
         .select(
             "doctor_services.id",
@@ -121,7 +136,6 @@ async function getDoctorServiceById(doctorId, serviceId) {
  * @returns {Promise<Object|undefined>} Обновлённая связь или undefined.
  */
 async function updateDoctorService(doctorId, serviceId, updateData) {
-
     // Проверка существования и активности врача
     const doctor = await db("doctors")
         .where({ id: doctorId, is_active: true })
@@ -131,7 +145,6 @@ async function updateDoctorService(doctorId, serviceId, updateData) {
         throw new Error("Doctor not found or inactive");
     }
 
-
     const service = await db("services")
         .where({ id: serviceId, is_active: true })
         .first();
@@ -140,11 +153,11 @@ async function updateDoctorService(doctorId, serviceId, updateData) {
         throw new Error("Service not found or inactive");
     }
 
-
     const [doctorService] = await db("doctor_services")
         .where({
             doctor_id: doctorId,
             service_id: serviceId,
+            is_active: true,
         })
         .update({
             duration_minutes: updateData.duration_minutes,
@@ -160,9 +173,13 @@ async function updateDoctorService(doctorId, serviceId, updateData) {
  * @param {number|string} id - Идентификатор связи.
  * @returns {Promise<Object|undefined>} Деактивированная связь или undefined.
  */
-async function deleteDoctorService(id) {
+async function deleteDoctorService(doctorId, serviceId) {
     const [doctorService] = await db("doctor_services")
-        .where({ id })
+        .where({
+            doctor_id: doctorId,
+            service_id: serviceId,
+            is_active: true,
+        })
         .update({ is_active: false })
         .returning("*");
 
@@ -172,7 +189,7 @@ async function deleteDoctorService(id) {
 module.exports = {
     createDoctorService,
     listDoctorServices,
-    listDoctorServicesByDoctorId,
+    getDoctorServiceById,
     updateDoctorService,
     deleteDoctorService,
 };

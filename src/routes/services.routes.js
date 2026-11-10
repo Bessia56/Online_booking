@@ -1,12 +1,12 @@
 const express = require("express");
 const router = express.Router();
-const validate = require("../validators/validate");
+const validate = require("../validator/validate");
 
 const servicesController = require("../controllers/services.controller");
 const {
     createServiceSchema,
     updateServiceSchema,
-} = require("../validators/services.validator");
+} = require("../validator/services.validator");
 
 /**
  * Маршруты для управления услугами.

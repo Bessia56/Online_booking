@@ -1,4 +1,5 @@
-const doctorServicesService = require("../model/doctorServices.model");
+const doctorServicesModel = require("../model/doctorServices.model");
+
 
 /**
  * Создаёт новую связь врача и услуги.
@@ -10,7 +11,7 @@ const doctorServicesService = require("../model/doctorServices.model");
  * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
-async function createDoctorService(req, res, next) {
+async function createDoctorService(req, res) {
     const doctorService = await doctorServicesService.createDoctorService(
         req.params.doctorId,
         req.body.service_id,
@@ -28,8 +29,11 @@ async function createDoctorService(req, res, next) {
  * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
-async function listDoctorServices(req, res, next) {
-    const doctorServices = await doctorServicesService.listDoctorServices();
+async function listDoctorServices(req, res) {
+    const doctorServices = await doctorServicesModel.listDoctorServices(
+        req.params.doctorId
+    );
+
     res.status(200).json(doctorServices);
 }
 
@@ -43,8 +47,8 @@ async function listDoctorServices(req, res, next) {
  * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
-async function getDoctorServiceById(req, res, next) {
-    const doctorService = await doctorServicesService.getDoctorServiceById(
+async function getDoctorServiceById(req, res) {
+    const doctorService = await doctorServicesModel.getDoctorServiceById(
         req.params.doctorId,
         req.params.serviceId,
     );
@@ -64,8 +68,8 @@ async function getDoctorServiceById(req, res, next) {
  * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
-async function updateDoctorService(req, res, next) {
-    const doctorService = await doctorServicesService.updateDoctorService(
+async function updateDoctorService(req, res) {
+    const doctorService = await doctorServicesModel.updateDoctorService(
         req.params.doctorId,
         req.params.serviceId,
         req.body,
@@ -85,9 +89,10 @@ async function updateDoctorService(req, res, next) {
  * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
-async function deleteDoctorService(req, res, next) {
-    const doctorService = await doctorServicesService.deleteDoctorService(
-        req.params.id,
+async function deleteDoctorService(req, res) {
+    const doctorService = await doctorServicesModel.deleteDoctorService(
+        req.params.doctorId,
+        req.params.serviceId
     );
 
     if (!doctorService) {

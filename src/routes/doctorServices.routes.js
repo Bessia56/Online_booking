@@ -1,12 +1,12 @@
 const express = require("express");
-const router = express.Router();
-const validate = require("../validators/validate");
+const router = express.Router({ mergeParams: true }); //по умолчанию передаёт параметры родительского маршрута во вложенный роутер. 
+const validate = require("../validator/validate");
 
 const doctorServicesController = require("../controllers/doctorServices.controller");
 const {
     createDoctorServiceSchema,
     updateDoctorServiceSchema
-} = require("../validators/doctorServices.validator");
+} = require("../validator/doctorServices.validator");
 
 /**
  * Маршруты для управления связями врачей и услуг.
