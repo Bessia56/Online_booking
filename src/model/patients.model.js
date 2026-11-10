@@ -36,6 +36,17 @@ async function getPatientById(id) {
 }
 
 /**
+ * Получает пациента по номеру телефона.
+ *
+ * @param {number|string} phone - Номер телефона пациента.
+ * @returns {Promise<Object|undefined>} Найденный пациент или undefined.
+ */
+async function getPatientByPhone(phone) {
+    const [patient] = await db("patients").select("*").where({ phone });
+    return patient;
+}
+
+/**
  * Частично обновляет данные пациента.
  *
  * @param {number|string} id - Идентификатор пациента.
@@ -63,6 +74,7 @@ module.exports = {
     createPatient,
     listPatients,
     getPatientById,
+    getPatientByPhone,
     updatePatient,
     deletePatient
 };
