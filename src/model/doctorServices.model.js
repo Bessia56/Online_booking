@@ -12,55 +12,49 @@ const db = require("../config/db");
  * @returns {Promise<Object>} Созданная или восстановленная связь.
  */
 async function createDoctorService(doctorId, serviceId, durationMinutes) {
-    // Проверка существования и активности врача
-    const doctor = await db("doctors")
-        .where({ id: doctorId, is_active: true })
-        .first();
-
-    if (!doctor) {
-        throw new Error("Doctor not found or inactive");
-    }
-
-    // Проверка существования и активности услуги
-    const service = await db("services")
-        .where({ id: serviceId, is_active: true })
-        .first();
-
-    if (!service) {
-        throw new Error("Service not found or inactive");
-    }
-
-    // Проверка существующей связи
-    const existingRelation = await db("doctor_services")
-        .where({
-            doctor_id: doctorId,
-            service_id: serviceId,
-        })
-        .first();
-
-    // Если связь уже активна, возвращаем ошибку
-    if (existingRelation) {
-        if (existingRelation.is_active) {
-            throw new Error("This service is already assigned to the doctor");
-        }
-
-        // Если связь неактивна, восстанавливаем её
-        const [reactivatedRelation] = await db("doctor_services")
-            .where({ id: existingRelation.id })
-            .update({
-                duration_minutes: durationMinutes,
-                is_active: true,
-            })
-            .returning("*");
-
-        return reactivatedRelation;
-    }
-
     // Создание новой связи
     const [doctorService] = await db("doctor_services")
         .insert({
             doctor_id: doctorId,
             service_id: serviceId,
+            duration_minutes: durationMinutes,
+            is_active: true,
+        })
+        .returning("*");
+
+    return doctorService;
+}
+
+async function isDoctorActive(doctorId) {
+    // Проверка существования и активности врача
+    return await db("doctors").where({ id: doctorId, is_active: true }).first();
+}
+
+async function isServiceActive(serviceId) {
+    // Проверка существования и активности услуги
+    return await db("services")
+        .where({ id: serviceId, is_active: true })
+        .first();
+}
+
+async function getDoctorServiceRelation(doctorId, serviceId) {
+    // Проверка существующей связи
+    return await db("doctor_services")
+        .where({
+            doctor_id: doctorId,
+            service_id: serviceId,
+        })
+        .first();
+}
+
+async function reactivateRelation(doctorId, serviceId, durationMinutes) {
+    // Восстановление неактивной связи
+    const [doctorService] = await db("doctor_services")
+        .where({
+            doctor_id: doctorId,
+            service_id: serviceId,
+        })
+        .update({
             duration_minutes: durationMinutes,
             is_active: true,
         })
@@ -192,4 +186,8 @@ module.exports = {
     getDoctorServiceById,
     updateDoctorService,
     deleteDoctorService,
+    isDoctorActive,
+    isServiceActive,
+    reactivateRelation,
+    getDoctorServiceRelation,
 };
