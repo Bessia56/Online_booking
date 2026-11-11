@@ -1,4 +1,4 @@
-const servicesService = require("../model/services.model");
+const servicesModel = require("../model/services.model");
 
 /**
  * Создаёт новую услугу.
@@ -10,8 +10,8 @@ const servicesService = require("../model/services.model");
  * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
-async function createService(req, res, next) {
-    const service = await servicesService.createService(req.body);
+async function createService(req, res) {
+    const service = await servicesModel.createService(req.body);
 
     res.status(201).json(service);
 }
@@ -24,8 +24,8 @@ async function createService(req, res, next) {
  * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
-async function listServices(req, res, next) {
-    const services = await servicesService.listServices();
+async function listServices(req, res) {
+    const services = await servicesModel.listServices();
     res.status(200).json(services);
 }
 
@@ -39,8 +39,8 @@ async function listServices(req, res, next) {
  * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
-async function getServiceById(req, res, next) {
-    const service = await servicesService.getServiceById(req.params.id);
+async function getServiceById(req, res) {
+    const service = await servicesModel.getServiceById(req.params.id);
     if (!service) {
         return res.status(404).json({ error: "Service not found" });
     }
@@ -57,8 +57,8 @@ async function getServiceById(req, res, next) {
  * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
-async function updateService(req, res, next) {
-    const service = await servicesService.updateService(
+async function updateService(req, res) {
+    const service = await servicesModel.updateService(
         req.params.id,
         req.body,
     );
@@ -77,8 +77,8 @@ async function updateService(req, res, next) {
  * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
-async function deleteService(req, res, next) {
-    const service = await servicesService.deleteService(req.params.id);
+async function deleteService(req, res) {
+    const service = await servicesModel.deleteService(req.params.id);
 
     if (!service) {
         return res.status(404).json({ error: "Service not found" });
