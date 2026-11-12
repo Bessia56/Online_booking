@@ -3,11 +3,10 @@ const servicesModel = require("../model/services.model");
 /**
  * Создаёт новую услугу.
  *
- * Получает данные услуги из тела HTTP-запроса.
+ * Данные услуги извлекаются из тела HTTP-запроса.
  *
- * @param {import("express").Request} req - HTTP-запрос.
+ * @param {import("express").Request} req - HTTP-запрос с данными услуги.
  * @param {import("express").Response} res - HTTP-ответ.
- * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
 async function createService(req, res) {
@@ -21,7 +20,6 @@ async function createService(req, res) {
  *
  * @param {import("express").Request} req - HTTP-запрос.
  * @param {import("express").Response} res - HTTP-ответ.
- * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
 async function listServices(req, res) {
@@ -32,11 +30,11 @@ async function listServices(req, res) {
 /**
  * Возвращает услугу по её ID.
  *
- * ID извлекается из параметров маршрута req.params.
+ * ID услуги извлекается из параметров маршрута.
+ * Если услуга не найдена, возвращает HTTP 404.
  *
  * @param {import("express").Request} req - HTTP-запрос.
  * @param {import("express").Response} res - HTTP-ответ.
- * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
 async function getServiceById(req, res) {
@@ -50,11 +48,13 @@ async function getServiceById(req, res) {
 /**
  * Частично обновляет данные услуги.
  *
- * ID извлекается из req.params, новые данные — из req.body.
+ * ID услуги извлекается из параметров маршрута,
+ * новые данные — из тела HTTP-запроса.
  *
- * @param {import("express").Request} req - HTTP-запрос.
+ * Если услуга не найдена, возвращает HTTP 404.
+ *
+ * @param {import("express").Request} req - HTTP-запрос с данными для обновления.
  * @param {import("express").Response} res - HTTP-ответ.
- * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
 async function updateService(req, res) {
@@ -70,11 +70,13 @@ async function updateService(req, res) {
 }
 
 /**
- * Удаляет услугу по её ID.
+ * Деактивирует услугу по её ID.
+ *
+ * ID услуги извлекается из параметров маршрута.
+ * Если услуга не найдена, возвращает HTTP 404.
  *
  * @param {import("express").Request} req - HTTP-запрос.
  * @param {import("express").Response} res - HTTP-ответ.
- * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
 async function deleteService(req, res) {

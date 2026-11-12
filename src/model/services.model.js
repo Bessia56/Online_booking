@@ -48,10 +48,12 @@ async function updateService(id, updateData) {
 }
 
 /**
- * Удаляет услугу по ID.
+ * Деактивирует услугу по её ID.
+ *
+ * Физически запись из базы данных не удаляется.
  *
  * @param {number|string} id - Идентификатор услуги.
- * @returns {Promise<Object|undefined>} Деактивированный услуга или undefined.
+ * @returns {Promise<Object|undefined>} Деактивированная услуга или undefined, если запись не найдена.
  */
 async function deleteService(id) {
     const [service] = await db("services")
@@ -62,8 +64,16 @@ async function deleteService(id) {
     return service;
 }
 
+/**
+ * Проверяет существование и активность услуги.
+ *
+ * Возвращает запись только в том случае, если услуга существует
+ * и имеет is_active = true.
+ *
+ * @param {number|string} serviceId - Идентификатор услуги.
+ * @returns {Promise<Object|undefined>} Запись активной услуги или undefined, если услуга отсутствует или неактивна.
+ */
 async function isServiceActive(serviceId) {
-    // Проверка существования и активности услуги
     return await db("services")
         .where({ id: serviceId, is_active: true })
         .first();
