@@ -62,11 +62,19 @@ async function deleteService(id) {
     return service;
 }
 
+async function isServiceActive(serviceId) {
+    // Проверка существования и активности услуги
+    return await db("services")
+        .where({ id: serviceId, is_active: true })
+        .first();
+}
+
 
 module.exports = {
     createService,
     listServices,
     getServiceById,
     updateService,
-    deleteService
+    deleteService,
+    isServiceActive
 };
