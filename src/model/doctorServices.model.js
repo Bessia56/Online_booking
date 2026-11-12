@@ -1,15 +1,14 @@
 const db = require("../config/db");
 
 /**
- * Создаёт новую связь врача и услуги.
+ * Создаёт новую связь между врачом и услугой.
  *
- * Если связь уже существует, но неактивна,
- * восстанавливает её.
+ * При создании связь получает статус is_active = true.
  *
- * @param {number} doctorId - ID врача.
- * @param {number} serviceId - ID услуги.
+ * @param {number|string} doctorId - Идентификатор врача.
+ * @param {number|string} serviceId - Идентификатор услуги.
  * @param {number} durationMinutes - Продолжительность услуги в минутах.
- * @returns {Promise<Object>} Созданная или восстановленная связь.
+ * @returns {Promise<Object>} Созданная запись связи.
  */
 async function createDoctorService(doctorId, serviceId, durationMinutes) {
     // Создание новой связи
@@ -25,6 +24,15 @@ async function createDoctorService(doctorId, serviceId, durationMinutes) {
     return doctorService;
 }
 
+/**
+ * Находит существующую связь между врачом и услугой.
+ *
+ * Возвращает запись независимо от её статуса активности.
+ *
+ * @param {number|string} doctorId - Идентификатор врача.
+ * @param {number|string} serviceId - Идентификатор услуги.
+ * @returns {Promise<Object|undefined>} Найденная связь или undefined, если она отсутствует.
+ */
 async function getDoctorServiceRelation(doctorId, serviceId) {
     // Проверка существующей связи
     return await db("doctor_services")
@@ -35,6 +43,16 @@ async function getDoctorServiceRelation(doctorId, serviceId) {
         .first();
 }
 
+/**
+ * Повторно активирует существующую связь врача и услуги.
+ *
+ * Обновляет продолжительность услуги и устанавливает is_active = true.
+ *
+ * @param {number|string} doctorId - Идентификатор врача.
+ * @param {number|string} serviceId - Идентификатор услуги.
+ * @param {number} durationMinutes - Новая продолжительность услуги в минутах.
+ * @returns {Promise<Object|undefined>} Обновлённая связь или undefined, если запись не найдена.
+ */
 async function reactivateRelation(doctorId, serviceId, durationMinutes) {
     // Восстановление неактивной связи
     const [doctorService] = await db("doctor_services")
@@ -52,9 +70,12 @@ async function reactivateRelation(doctorId, serviceId, durationMinutes) {
 }
 
 /**
- * Получает список всех активных связей врачей и услуг.
+ * Возвращает список активных услуг, назначенных указанному врачу.
  *
- * @returns {Promise<Object[]>} Массив связей.
+ * Учитывает активность врача, услуги и самой связи.
+ *
+ * @param {number|string} doctorId - Идентификатор врача.
+ * @returns {Promise<Object[]>} Массив активных связей с данными услуг.
  */
 async function listDoctorServices(doctorId) {
     const doctorServices = await db("doctor_services")
@@ -79,11 +100,13 @@ async function listDoctorServices(doctorId) {
 }
 
 /**
- * Получает связь врача и услуги по ID врача и ID услуги.
+ * Находит активную связь врача и услуги.
  *
- * @param {number|string} doctorId - ID врача.
- * @param {number|string} serviceId - ID услуги.
- * @returns {Promise<Object|undefined>} Найденная связь или undefined.
+ * Учитывает активность врача, услуги и самой связи.
+ *
+ * @param {number|string} doctorId - Идентификатор врача.
+ * @param {number|string} serviceId - Идентификатор услуги.
+ * @returns {Promise<Object|undefined>} Найденная связь или undefined, если она отсутствует или неактивна.
  */
 async function getDoctorServiceById(doctorId, serviceId) {
     const doctorService = await db("doctor_services")
@@ -110,12 +133,16 @@ async function getDoctorServiceById(doctorId, serviceId) {
 }
 
 /**
- * Частично обновляет параметры связи врача и услуги.
+ * Обновляет параметры активной связи врача и услуги.
  *
- * @param {number|string} doctorId - ID врача.
- * @param {number|string} serviceId - ID услуги.
+ * Перед обновлением проверяет существование и активность врача и услуги.
+ * Обновляет продолжительность услуги.
+ *
+ * @param {number|string} doctorId - Идентификатор врача.
+ * @param {number|string} serviceId - Идентификатор услуги.
  * @param {Object} updateData - Данные для обновления.
- * @returns {Promise<Object|undefined>} Обновлённая связь или undefined.
+ * @returns {Promise<Object|undefined>} Обновлённая связь или undefined, если связь не найдена.
+ * @throws {Error} Если врач или услуга не существуют либо неактивны.
  */
 async function updateDoctorService(doctorId, serviceId, updateData) {
     // Проверка существования и активности врача
@@ -150,10 +177,13 @@ async function updateDoctorService(doctorId, serviceId, updateData) {
 }
 
 /**
- * Удаляет связь врача и услуги по ID.
+ * Деактивирует связь между врачом и услугой.
  *
- * @param {number|string} id - Идентификатор связи.
- * @returns {Promise<Object|undefined>} Деактивированная связь или undefined.
+ * Физически запись из базы данных не удаляется.
+ *
+ * @param {number|string} doctorId - Идентификатор врача.
+ * @param {number|string} serviceId - Идентификатор услуги.
+ * @returns {Promise<Object|undefined>} Деактивированная связь или undefined, если активная связь не найдена.
  */
 async function deleteDoctorService(doctorId, serviceId) {
     const [doctorService] = await db("doctor_services")
