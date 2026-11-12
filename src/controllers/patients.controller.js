@@ -3,11 +3,12 @@ const patientsModel = require("../model/patients.model");
 /**
  * Создаёт нового пациента.
  *
- * Получает данные пациента из тела HTTP-запроса.
+ * Проверяет, зарегистрирован ли пациент с указанным номером телефона.
  *
- * @param {import("express").Request} req - HTTP-запрос.
+ * Данные пациента извлекаются из тела HTTP-запроса.
+ *
+ * @param {import("express").Request} req - HTTP-запрос с данными пациента.
  * @param {import("express").Response} res - HTTP-ответ.
- * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
 async function createPatient(req, res) {

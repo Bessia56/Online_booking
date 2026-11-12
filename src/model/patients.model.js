@@ -25,10 +25,10 @@ async function listPatients() {
 }
 
 /**
- * Получает пациента по ID.
+ * Находит пациента по его ID.
  *
  * @param {number|string} id - Идентификатор пациента.
- * @returns {Promise<Object|undefined>} Найденный пациент или undefined.
+ * @returns {Promise<Object|undefined>} Найденный пациент или undefined, если запись отсутствует.
  */
 async function getPatientById(id) {
     const [patient] = await db("patients").select("*").where({ id });
@@ -36,10 +36,10 @@ async function getPatientById(id) {
 }
 
 /**
- * Получает пациента по номеру телефона.
+ * Находит пациента по номеру телефона.
  *
- * @param {number|string} phone - Номер телефона пациента.
- * @returns {Promise<Object|undefined>} Найденный пациент или undefined.
+ * @param {string} phone - Номер телефона пациента.
+ * @returns {Promise<Object|undefined>} Найденный пациент или undefined, если запись отсутствует.
  */
 async function getPatientByPhone(phone) {
     const [patient] = await db("patients").select("*").where({ phone });
@@ -59,10 +59,10 @@ async function updatePatient(id, updateData) {
 }
 
 /**
- * Удаляет пациента по ID.
+ * Физически удаляет запись пациента из базы данных.
  *
  * @param {number|string} id - Идентификатор пациента.
- * @returns {Promise<Object|undefined>} Удалённый пациент или undefined.
+ * @returns {Promise<Object|undefined>} Удалённая запись пациента или undefined, если пациент не найден.
  */
 async function deletePatient(id) {
     const [patient] = await db("patients").where({ id }).delete().returning("*");
