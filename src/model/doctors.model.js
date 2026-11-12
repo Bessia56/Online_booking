@@ -1,7 +1,7 @@
 const db = require("../config/db");
 
 /**
- * Создаёт нового врача в базе данных.
+ * Создаёт новую запись врача в базе данных.
  *
  * @param {Object} doctorData - Данные нового врача.
  * @returns {Promise<Object>} Созданная запись врача.
@@ -39,8 +39,8 @@ async function getDoctorById(id) {
  * Частично обновляет данные врача.
  *
  * @param {number|string} id - Идентификатор врача.
- * @param {Object} updateData - Поля, которые необходимо обновить.
- * @returns {Promise<Object|undefined>} Обновлённый врач или undefined.
+ * @param {Object} updateData - Объект с полями для обновления.
+ * @returns {Promise<Object|undefined>} Обновлённая запись врача или undefined, если врач не найден.
  */
 async function updateDoctor(id, updateData) {
     const [doctor] = await db("doctors")
@@ -51,10 +51,12 @@ async function updateDoctor(id, updateData) {
 }
 
 /**
- * Удаляет врача по ID.
+ * Деактивирует врача по его ID.
+ *
+ * Физически запись из базы данных не удаляется.
  *
  * @param {number|string} id - Идентификатор врача.
- * @returns {Promise<Object|undefined>} Деактивированный врач или undefined.
+ * @returns {Promise<Object|undefined>} Деактивированная запись врача или undefined, если врач не найден.
  */
 async function deleteDoctor(id) {
     const [doctor] = await db("doctors")
@@ -65,15 +67,35 @@ async function deleteDoctor(id) {
     return doctor;
 }
 
+/**
+ * Находит врача по номеру телефона.
+ *
+ * @param {string} phone - Номер телефона врача.
+ * @returns {Promise<Object|undefined>} Найденный врач или undefined, если запись отсутствует.
+ */
 async function getDoctorByPhone(phone) {
     return await db("doctors").where({ phone }).first();
 }
 
+/**
+ * Находит врача по адресу электронной почты.
+ *
+ * @param {string} email - Электронная почта врача.
+ * @returns {Promise<Object|undefined>} Найденный врач или undefined, если запись отсутствует.
+ */
 async function getDoctorByEmail(email) {
     return await db("doctors").where({ email }).first();
 }
 
-
+/**
+ * Проверяет существование и активность врача.
+ *
+ * Возвращает запись врача только в том случае, если он существует
+ * и имеет is_active = true.
+ *
+ * @param {number|string} doctorId - Идентификатор врача.
+ * @returns {Promise<Object|undefined>} Запись активного врача или undefined, если врач отсутствует или неактивен.
+ */
 async function isDoctorActive(doctorId) {
     // Проверка существования и активности врача
     return await db("doctors").where({ id: doctorId, is_active: true }).first();

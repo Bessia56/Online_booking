@@ -5,11 +5,11 @@ const servicesModel = require("../model/services.model");
 /**
  * Создаёт нового врача.
  *
- * Получает данные врача из тела HTTP-запроса.
+ * Проверяет уникальность email и номера телефона
+ * перед сохранением нового врача.
  *
- * @param {import("express").Request} req - HTTP-запрос.
+ * @param {import("express").Request} req - HTTP-запрос с данными врача.
  * @param {import("express").Response} res - HTTP-ответ.
- * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
 async function createDoctor(req, res) {
@@ -34,7 +34,6 @@ async function createDoctor(req, res) {
  *
  * @param {import("express").Request} req - HTTP-запрос.
  * @param {import("express").Response} res - HTTP-ответ.
- * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
 async function listDoctors(req, res) {
@@ -45,11 +44,10 @@ async function listDoctors(req, res) {
 /**
  * Возвращает врача по его ID.
  *
- * ID извлекается из параметров маршрута req.params.
+ * ID врача извлекается из параметров маршрута.
  *
  * @param {import("express").Request} req - HTTP-запрос.
  * @param {import("express").Response} res - HTTP-ответ.
- * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
 async function getDoctorById(req, res) {
@@ -63,11 +61,11 @@ async function getDoctorById(req, res) {
 /**
  * Частично обновляет данные врача.
  *
- * ID извлекается из req.params, новые данные — из req.body.
+ * ID врача извлекается из параметров маршрута,
+ * новые данные — из тела HTTP-запроса.
  *
- * @param {import("express").Request} req - HTTP-запрос.
+ * @param {import("express").Request} req - HTTP-запрос с данными для обновления.
  * @param {import("express").Response} res - HTTP-ответ.
- * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
 async function updateDoctor(req, res) {
@@ -80,11 +78,12 @@ async function updateDoctor(req, res) {
 }
 
 /**
- * Удаляет врача по его ID.
+ * Деактивирует врача по его ID.
+ *
+ * Выполняет мягкое удаление через изменение is_active.
  *
  * @param {import("express").Request} req - HTTP-запрос.
  * @param {import("express").Response} res - HTTP-ответ.
- * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
 async function deleteDoctor(req, res) {
@@ -94,18 +93,22 @@ async function deleteDoctor(req, res) {
         return res.status(404).json({ error: "Doctor not found" });
     }
     res.status(200).json({
-        message: "Doctor service deactivated successfully",
+        message: "Doctor deactivated successfully",
     });
 }
 
 /**
- * Создаёт новую связь врача и услуги.
+ * Добавляет услугу врачу.
  *
- * Получает данные связи из тела HTTP-запроса.
+ * Проверяет существование и активность врача и услуги.
+ * Проверяет наличие существующей связи.
+ * Восстанавливает неактивную связь или создаёт новую.
  *
- * @param {import("express").Request} req - HTTP-запрос.
+ * ID врача извлекается из параметров маршрута,
+ * ID услуги и продолжительность — из тела HTTP-запроса.
+ *
+ * @param {import("express").Request} req - HTTP-запрос с данными связи.
  * @param {import("express").Response} res - HTTP-ответ.
- * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
 async function addServiceToDoctor(req, res) {
@@ -165,11 +168,12 @@ async function addServiceToDoctor(req, res) {
 }
 
 /**
- * Удаляет связь врача и услуги по её ID.
+ * Деактивирует связь между врачом и услугой.
+ *
+ * ID врача и ID услуги извлекаются из параметров маршрута.
  *
  * @param {import("express").Request} req - HTTP-запрос.
  * @param {import("express").Response} res - HTTP-ответ.
- * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
 async function removeServiceFromDoctor(req, res) {
@@ -182,15 +186,18 @@ async function removeServiceFromDoctor(req, res) {
     if (!doctorService) {
         return res.status(404).json({ error: "Doctor service not found" });
     }
-    res.status(200).json({ message: "Doctor service deleted successfully" });
+    res.status(200).json({
+    message: "Doctor service deactivated successfully",
+});
 }
 
 /**
- * Возвращает список всех связей врачей и услуг.
+ * Возвращает список активных услуг конкретного врача.
+ *
+ * ID врача извлекается из параметров маршрута.
  *
  * @param {import("express").Request} req - HTTP-запрос.
  * @param {import("express").Response} res - HTTP-ответ.
- * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
 async function listDoctorServices(req, res) {
@@ -203,13 +210,13 @@ async function listDoctorServices(req, res) {
 }
 
 /**
- * Возвращает список связей врача и услуг по ID врача.
+ * Возвращает услугу, назначенную врачу,
+ * по ID врача и ID услуги.
  *
- * ID извлекается из параметров маршрута req.params.
+ * Идентификаторы извлекаются из параметров маршрута.
  *
  * @param {import("express").Request} req - HTTP-запрос.
  * @param {import("express").Response} res - HTTP-ответ.
- * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
 async function getDoctorServiceById(req, res) {
@@ -227,13 +234,13 @@ async function getDoctorServiceById(req, res) {
 }
 
 /**
- * Изменяет параметр продолжительность приема уже существующей связи ID врача.
+ * Изменяет продолжительность услуги, назначенной врачу.
  *
- * ID извлекается из параметров маршрута req.params.
+ * ID врача и ID услуги извлекаются из параметров маршрута,
+ * новая продолжительность — из тела HTTP-запроса.
  *
- * @param {import("express").Request} req - HTTP-запрос.
+ * @param {import("express").Request} req - HTTP-запрос с новой продолжительностью.
  * @param {import("express").Response} res - HTTP-ответ.
- * @param {import("express").NextFunction} next - Передача ошибки middleware.
  * @returns {Promise<import("express").Response | void>}
  */
 async function updateDoctorService(req, res) {
