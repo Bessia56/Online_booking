@@ -25,18 +25,6 @@ async function createDoctorService(doctorId, serviceId, durationMinutes) {
     return doctorService;
 }
 
-async function isDoctorActive(doctorId) {
-    // Проверка существования и активности врача
-    return await db("doctors").where({ id: doctorId, is_active: true }).first();
-}
-
-async function isServiceActive(serviceId) {
-    // Проверка существования и активности услуги
-    return await db("services")
-        .where({ id: serviceId, is_active: true })
-        .first();
-}
-
 async function getDoctorServiceRelation(doctorId, serviceId) {
     // Проверка существующей связи
     return await db("doctor_services")
@@ -186,8 +174,6 @@ module.exports = {
     getDoctorServiceById,
     updateDoctorService,
     deleteDoctorService,
-    isDoctorActive,
-    isServiceActive,
     reactivateRelation,
     getDoctorServiceRelation,
 };
