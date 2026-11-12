@@ -65,10 +65,27 @@ async function deleteDoctor(id) {
     return doctor;
 }
 
+async function getDoctorByPhone(phone) {
+    return await db("doctors").where({ phone }).first();
+}
+
+async function getDoctorByEmail(email) {
+    return await db("doctors").where({ email }).first();
+}
+
+
+async function isDoctorActive(doctorId) {
+    // Проверка существования и активности врача
+    return await db("doctors").where({ id: doctorId, is_active: true }).first();
+}
+
 module.exports = {
     createDoctor,
     listDoctors,
     getDoctorById,
     updateDoctor,
     deleteDoctor,
+    getDoctorByPhone,
+    getDoctorByEmail,
+    isDoctorActive,
 };

@@ -27,11 +27,11 @@ router.get("/", doctorsController.listDoctors);
 router.get("/:id", doctorsController.getDoctorById);
 router.patch("/:id", validate(updateDoctorSchema), doctorsController.updateDoctor);
 router.delete("/:id", doctorsController.deleteDoctor);
-router.post("/:id/services", doctorsController.addServiceToDoctor);
-router.delete("/:id/services/:serviceId", doctorsController.removeServiceFromDoctor);   
+router.post("/:doctorId/services", doctorsController.addServiceToDoctor);
+router.delete("/:doctorId/services/:serviceId", doctorsController.removeServiceFromDoctor); 
 router.get("/:id/services", doctorsController.listDoctorServices); 
-router.get("/:doctorId/services/:serviceId", doctorsController.getDoctorServiceById); 
-router.patch("/:doctorId/services/:serviceId", doctorsController.updateDoctorService); 
+router.get("/:doctorId/services/:serviceId", doctorsController.getDoctorServiceById);
+router.patch("/:doctorId/services/:serviceId", doctorsController.updateDoctorService);
 
 
 module.exports = router;

@@ -1,5 +1,6 @@
 const doctorsModel = require("../model/doctors.model");
 const doctorServicesModel = require("../model/doctorServices.model");
+const servicesModel = require("../model/services.model");
 
 /**
  * Создаёт нового врача.
@@ -12,9 +13,20 @@ const doctorServicesModel = require("../model/doctorServices.model");
  * @returns {Promise<import("express").Response | void>}
  */
 async function createDoctor(req, res) {
-    const doctor = await doctorsModel.createDoctor(req.body);
+    const { email, phone } = req.body;
 
-    res.status(201).json(doctor);
+    const existingEmail = await doctorsModel.getDoctorByEmail(email);
+    const existingPhone = await doctorsModel.getDoctorByPhone(phone);
+
+    if (existingEmail || existingPhone) {
+        return res
+            .status(409)
+            .json({ error: "Doctor with this email or phone already exists" });
+    }
+
+    const newDoctor = await doctorsModel.createDoctor(req.body);
+
+    res.status(201).json(newDoctor);
 }
 
 /**
@@ -81,7 +93,9 @@ async function deleteDoctor(req, res) {
     if (!doctor) {
         return res.status(404).json({ error: "Doctor not found" });
     }
-    res.status(200).json({ message: "Doctor deleted successfully" });
+    res.status(200).json({
+        message: "Doctor service deactivated successfully",
+    });
 }
 
 /**
@@ -99,34 +113,34 @@ async function addServiceToDoctor(req, res) {
     const { serviceId, durationMinutes } = req.body;
 
     //Проверяем, существует ли активный врач
-    const doctor = await doctorServicesModel.isDoctorActive(doctorId);
+    const doctor = await doctorsModel.isDoctorActive(doctorId);
 
     if (!doctor) {
         return res.status(404).json({
-            error: "Doctor not found or inactive"
+            error: "Doctor not found or inactive",
         });
     }
 
     //Проверяем, существует ли активная услуга
-    const service = await doctorServicesModel.isServiceActive(serviceId);
+    const service = await servicesModel.isServiceActive(serviceId);
 
     if (!service) {
         return res.status(404).json({
-            error: "Service not found or inactive"
+            error: "Service not found or inactive",
         });
     }
 
     //Ищем существующую связь врача с услугой
     const existingRelation = await doctorServicesModel.getDoctorServiceRelation(
         doctorId,
-        serviceId
+        serviceId,
     );
 
     if (existingRelation) {
         // Связь уже активна — повторно создавать нельзя
         if (existingRelation.is_active) {
             return res.status(409).json({
-                error: "This service is already assigned to the doctor"
+                error: "This service is already assigned to the doctor",
             });
         }
 
@@ -134,7 +148,7 @@ async function addServiceToDoctor(req, res) {
         const restoredRelation = await doctorServicesModel.reactivateRelation(
             doctorId,
             serviceId,
-            durationMinutes
+            durationMinutes,
         );
 
         return res.status(200).json(restoredRelation);
@@ -144,11 +158,10 @@ async function addServiceToDoctor(req, res) {
     const doctorService = await doctorServicesModel.createDoctorService(
         doctorId,
         serviceId,
-        durationMinutes
+        durationMinutes,
     );
 
     return res.status(201).json(doctorService);
-
 }
 
 /**
@@ -160,10 +173,9 @@ async function addServiceToDoctor(req, res) {
  * @returns {Promise<import("express").Response | void>}
  */
 async function removeServiceFromDoctor(req, res) {
-    const { doctorId } = req.params;
-    const { serviceId} = req.body;
+    const { doctorId, serviceId } = req.params;
 
-    const doctorService = await doctorsModel.deleteDoctorService(
+    const doctorService = await doctorServicesModel.deleteDoctorService(
         doctorId,
         serviceId,
     );
@@ -184,7 +196,8 @@ async function removeServiceFromDoctor(req, res) {
 async function listDoctorServices(req, res) {
     const { doctorId } = req.params;
 
-    const doctorServices = await doctorsModel.listDoctorServices(doctorId);
+    const doctorServices =
+        await doctorServicesModel.listDoctorServices(doctorId);
 
     res.status(200).json(doctorServices);
 }
@@ -200,10 +213,13 @@ async function listDoctorServices(req, res) {
  * @returns {Promise<import("express").Response | void>}
  */
 async function getDoctorServiceById(req, res) {
-    const doctorService = await doctorsModel.getDoctorServiceById(
-        req.params.doctorId,
-        req.params.serviceId,
+    const { doctorId, serviceId } = req.params;
+
+    const doctorService = await doctorServicesModel.getDoctorServiceById(
+        doctorId,
+        serviceId,
     );
+
     if (!doctorService) {
         return res.status(404).json({ error: "Doctor service not found" });
     }
@@ -221,10 +237,13 @@ async function getDoctorServiceById(req, res) {
  * @returns {Promise<import("express").Response | void>}
  */
 async function updateDoctorService(req, res) {
-    const doctorService = await doctorsModel.updateDoctorService(
-        req.params.doctorId,
-        req.params.serviceId,
-        req.body,
+    const { doctorId, serviceId } = req.params;
+    const { durationMinutes } = req.body;
+
+    const doctorService = await doctorServicesModel.updateDoctorService(
+        doctorId,
+        serviceId,
+        { duration_minutes: durationMinutes },
     );
 
     if (!doctorService) {
