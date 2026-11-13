@@ -133,35 +133,14 @@ async function getDoctorServiceById(doctorId, serviceId) {
 }
 
 /**
- * Обновляет параметры активной связи врача и услуги.
- *
- * Перед обновлением проверяет существование и активность врача и услуги.
- * Обновляет продолжительность услуги.
+ * Обновляет продолжительность активной связи врача и услуги.
  *
  * @param {number|string} doctorId - Идентификатор врача.
  * @param {number|string} serviceId - Идентификатор услуги.
  * @param {Object} updateData - Данные для обновления.
- * @returns {Promise<Object|undefined>} Обновлённая связь или undefined, если связь не найдена.
- * @throws {Error} Если врач или услуга не существуют либо неактивны.
+ * @returns {Promise<Object|undefined>} Обновлённая связь или undefined, если активная связь не найдена.
  */
 async function updateDoctorService(doctorId, serviceId, updateData) {
-    // Проверка существования и активности врача
-    const doctor = await db("doctors")
-        .where({ id: doctorId, is_active: true })
-        .first();
-
-    if (!doctor) {
-        throw new Error("Doctor not found or inactive");
-    }
-
-    const service = await db("services")
-        .where({ id: serviceId, is_active: true })
-        .first();
-
-    if (!service) {
-        throw new Error("Service not found or inactive");
-    }
-
     const [doctorService] = await db("doctor_services")
         .where({
             doctor_id: doctorId,

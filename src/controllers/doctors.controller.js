@@ -187,8 +187,8 @@ async function removeServiceFromDoctor(req, res) {
         return res.status(404).json({ error: "Doctor service not found" });
     }
     res.status(200).json({
-    message: "Doctor service deactivated successfully",
-});
+        message: "Doctor service deactivated successfully",
+    });
 }
 
 /**
@@ -246,6 +246,36 @@ async function getDoctorServiceById(req, res) {
 async function updateDoctorService(req, res) {
     const { doctorId, serviceId } = req.params;
     const { durationMinutes } = req.body;
+
+    //Проверяем, существует ли активный врач
+    const doctor = await doctorsModel.isDoctorActive(doctorId);
+
+    if (!doctor) {
+        return res.status(404).json({
+            error: "Doctor not found or inactive",
+        });
+    }
+
+    //Проверяем, существует ли активная услуга
+    const service = await servicesModel.isServiceActive(serviceId);
+
+    if (!service) {
+        return res.status(404).json({
+            error: "Service not found or inactive",
+        });
+    }
+
+    //Ищем существующую связь врача с услугой
+    const existingRelation = await doctorServicesModel.getDoctorServiceRelation(
+        doctorId,
+        serviceId,
+    );
+    if (!existingRelation || !existingRelation.is_active) {
+        // Связь не найдена — возвращаем 404
+        return res.status(404).json({
+            error: "Active doctor service relation not found",
+        });
+    }
 
     const doctorService = await doctorServicesModel.updateDoctorService(
         doctorId,
