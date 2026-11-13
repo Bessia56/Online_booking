@@ -21,6 +21,7 @@ const {
  * GET    /:id/services          — получение списка услуг врача.
  * GET    /:doctorId/services/:serviceId — получение конкретной услуги врача.
  * PATCH  /:doctorId/services/:serviceId — изменение продолжительности приема.  
+ * PATCH  /doctors/:id/activate — активация врача.
  */
 router.post("/", validate(createDoctorSchema), doctorsController.createDoctor);
 router.get("/", doctorsController.listDoctors);
@@ -32,6 +33,7 @@ router.delete("/:doctorId/services/:serviceId", doctorsController.removeServiceF
 router.get("/:id/services", doctorsController.listDoctorServices); 
 router.get("/:doctorId/services/:serviceId", doctorsController.getDoctorServiceById);
 router.patch("/:doctorId/services/:serviceId", doctorsController.updateDoctorService);
+router.patch("/:id/activate", doctorsController.activateDoctor);
 
 
 module.exports = router;

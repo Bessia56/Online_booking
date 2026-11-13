@@ -101,6 +101,15 @@ async function isDoctorActive(doctorId) {
     return await db("doctors").where({ id: doctorId, is_active: true }).first();
 }
 
+async function activateDoctor(doctorId) {
+    const [doctor] = await db("doctors")
+        .where({ id: doctorId })
+        .update({ is_active: true })
+        .returning("*");
+
+    return doctor;
+}
+
 module.exports = {
     createDoctor,
     listDoctors,
@@ -110,4 +119,5 @@ module.exports = {
     getDoctorByPhone,
     getDoctorByEmail,
     isDoctorActive,
+    activateDoctor,
 };

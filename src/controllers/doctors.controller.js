@@ -289,6 +289,25 @@ async function updateDoctorService(req, res) {
     res.status(200).json(doctorService);
 }
 
+async function activateDoctor(req, res) {
+    const { id } = req.params;
+
+    const doctor = await doctorsModel.getDoctorById(id);
+
+    if (!doctor) {
+        return res.status(404).json({ error: "Doctor not found" });
+    }
+
+    if (doctor.is_active) {
+        return res.status(409).json({
+            error: "Doctor is already active",
+        });
+    }
+    const updatedDoctor = await doctorsModel.activateDoctor(id);
+
+    res.status(200).json(updatedDoctor);
+}
+
 module.exports = {
     createDoctor,
     listDoctors,
@@ -300,4 +319,5 @@ module.exports = {
     listDoctorServices,
     getDoctorServiceById,
     updateDoctorService,
+    activateDoctor,
 };
