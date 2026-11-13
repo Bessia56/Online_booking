@@ -49,6 +49,6 @@ router.patch(
     doctorsController.updateDoctorService,
 );
 router.patch("/:id/activate", doctorsController.activateDoctor);
-router.get("/", doctorsController.listDoctors);
+router.get("/", doctorsController.filterDoctors);
 
 module.exports = router;

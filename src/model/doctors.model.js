@@ -118,17 +118,41 @@ async function activateDoctor(doctorId) {
     return doctor;
 }
 
-async function listDoctors() {
+/**
+ * Возвращает список всех врачей.
+ *
+ * @returns {Promise<Object[]>} Массив записей врачей.
+ */
+async function filterDoctors() {
     return await db("doctors").select("*");
 }
 
+/**
+ * Возвращает список всех активных врачей.
+ *
+ * @returns {Promise<Object[]>} Массив активных врачей.
+ */
 async function listActiveDoctors() {
     return await db("doctors").where({ is_active: true }).select("*");
 }
 
+/**
+ * Возвращает список всех неактивных врачей.
+ *
+ * @returns {Promise<Object[]>} Массив неактивных врачей.
+ */
 async function listInactiveDoctors() {
     return await db("doctors").where({ is_active: false }).select("*");
 }
+
+/**
+ * Возвращает список активных врачей, оказывающих указанную услугу.
+ *
+ * Учитывает активность врача, услуги и связи между ними.
+ *
+ * @param {number|string} serviceId - Идентификатор услуги.
+ * @returns {Promise<Object[]>} Массив активных врачей.
+ */
 async function listActiveDoctorsByService(serviceId) {
     return await db("doctors")
         .join("doctor_services", "doctors.id", "doctor_services.doctor_id")
@@ -152,7 +176,7 @@ module.exports = {
     getDoctorByEmail,
     isDoctorActive,
     activateDoctor,
-    listDoctors,
+    filterDoctors,
     listActiveDoctors,
     listInactiveDoctors,
     listActiveDoctorsByService,

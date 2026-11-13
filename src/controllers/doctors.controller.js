@@ -289,6 +289,18 @@ async function updateDoctorService(req, res) {
     res.status(200).json(doctorService);
 }
 
+/**
+ * Повторно активирует врача по его ID.
+ *
+ * Проверяет существование врача и его текущий статус активности.
+ * Если врач уже активен, возвращает HTTP 409.
+ *
+ * ID врача извлекается из параметров маршрута.
+ *
+ * @param {import("express").Request} req - HTTP-запрос.
+ * @param {import("express").Response} res - HTTP-ответ.
+ * @returns {Promise<import("express").Response | void>}
+ */
 async function activateDoctor(req, res) {
     const { id } = req.params;
 
@@ -308,6 +320,17 @@ async function activateDoctor(req, res) {
     res.status(200).json(updatedDoctor);
 }
 
+/**
+ * Возвращает список врачей.
+ *
+ * Поддерживает фильтрацию по активности врача.
+ *
+ * Параметр фильтрации извлекается из query-параметров HTTP-запроса.
+ *
+ * @param {import("express").Request} req - HTTP-запрос.
+ * @param {import("express").Response} res - HTTP-ответ.
+ * @returns {Promise<import("express").Response | void>}
+ */
 async function listDoctors(req, res) {
     const { is_active } = req.query;
 
@@ -330,7 +353,21 @@ async function listDoctors(req, res) {
     res.status(200).json(doctors);
 }
 
-async function listDoctors(req, res) {
+/**
+ * Возвращает список врачей с учётом заданных фильтров.
+ *
+ * Поддерживает фильтрацию по активности врача
+ * и по оказываемой услуге.
+ *
+ * Проверяет корректность переданных query-параметров.
+ * При поиске по услуге возвращает только активных врачей
+ * с активной связью и активной услугой.
+ *
+ * @param {import("express").Request} req - HTTP-запрос с параметрами фильтрации.
+ * @param {import("express").Response} res - HTTP-ответ.
+ * @returns {Promise<import("express").Response | void>}
+ */
+async function filterDoctors(req, res) {
     const { is_active, serviceId } = req.query;
 
     // Проверяем параметр активности
@@ -407,5 +444,5 @@ module.exports = {
     getDoctorServiceById,
     updateDoctorService,
     activateDoctor,
-    listDoctors,
+    filterDoctors,
 };
