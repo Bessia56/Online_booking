@@ -308,16 +308,91 @@ async function activateDoctor(req, res) {
     res.status(200).json(updatedDoctor);
 }
 
-async function listActiveDoctors(req, res) {
-    const activeDoctors = await doctorsModel.listActiveDoctors();
+async function listDoctors(req, res) {
+    const { is_active } = req.query;
 
-    res.status(200).json(activeDoctors);
+    if (is_active !== undefined && !["true", "false"].includes(is_active)) {
+        return res.status(400).json({
+            error: "is_active must be true or false",
+        });
+    }
+
+    let doctors;
+
+    if (is_active === "true") {
+        doctors = await doctorsModel.listActiveDoctors();
+    } else if (is_active === "false") {
+        doctors = await doctorsModel.listInactiveDoctors();
+    } else {
+        doctors = await doctorsModel.listDoctors();
+    }
+
+    res.status(200).json(doctors);
 }
 
-async function listInactiveDoctors(req, res) {
-    const inactiveDoctors = await doctorsModel.listInactiveDoctors();
+async function listDoctors(req, res) {
+    const { is_active, serviceId } = req.query;
 
-    res.status(200).json(inactiveDoctors);
+    // Проверяем параметр активности
+    if (is_active !== undefined && !["true", "false"].includes(is_active)) {
+        return res.status(400).json({
+            error: "is_active must be true or false",
+        });
+    }
+
+    // Проверяем ID услуги
+    if (serviceId !== undefined) {
+        const serviceIdNumber = Number(serviceId);
+
+        if (!Number.isInteger(serviceIdNumber) || serviceIdNumber <= 0) {
+            return res.status(400).json({
+                error: "serviceId must be a positive integer",
+            });
+        }
+
+        // Проверяем существование и активность услуги
+        const service = await servicesModel.isServiceActive(serviceIdNumber);
+
+        if (!service) {
+            return res.status(404).json({
+                error: "Service not found or inactive",
+            });
+        }
+
+        // Получаем список активных врачей
+        const doctors = await doctorsModel.listActiveDoctors();
+
+        // Оставляем врачей, которым назначена выбранная услуга
+        const result = [];
+
+        for (const doctor of doctors) {
+            const relation = await doctorServicesModel.getDoctorServiceRelation(
+                doctor.id,
+                serviceIdNumber,
+            );
+
+            if (relation && relation.is_active) {
+                result.push(doctor);
+            }
+        }
+
+        return res.status(200).json(result);
+    }
+
+    // Получаем список врачей по активности
+    let doctors;
+
+    if (is_active === "true") {
+        doctors = await doctorsModel.listActiveDoctors();
+    } 
+    else if (is_active === "false") {
+        doctors = await doctorsModel.listInactiveDoctors();
+    } 
+    else {
+        doctors = await doctorsModel.listDoctors();
+    }
+
+    return res.status(200).json(doctors);
 }
 
 module.exports = {
@@ -332,6 +407,5 @@ module.exports = {
     getDoctorServiceById,
     updateDoctorService,
     activateDoctor,
-    listActiveDoctors,
-    listInactiveDoctors,
+    listDoctors,
 };

@@ -101,6 +101,14 @@ async function isDoctorActive(doctorId) {
     return await db("doctors").where({ id: doctorId, is_active: true }).first();
 }
 
+/**
+ * Повторно активирует врача по его ID.
+ *
+ * Устанавливает is_active = true.
+ *
+ * @param {number|string} doctorId - Идентификатор врача.
+ * @returns {Promise<Object|undefined>} Активированная запись врача или undefined, если врач не найден.
+ */
 async function activateDoctor(doctorId) {
     const [doctor] = await db("doctors")
         .where({ id: doctorId })
@@ -108,22 +116,32 @@ async function activateDoctor(doctorId) {
         .returning("*");
 
     return doctor;
-};
+}
+
+async function listDoctors() {
+    return await db("doctors").select("*");
+}
 
 async function listActiveDoctors() {
-    const activeDoctors = await db("doctors")
-        .where({ is_active: true })
-        .select("*");
-    return activeDoctors;
-};
+    return await db("doctors").where({ is_active: true }).select("*");
+}
 
 async function listInactiveDoctors() {
-    const inactiveDoctors = await db("doctors")
-        .where({ is_active: false })
-        .select("*");
-    return inactiveDoctors;
-};
-
+    return await db("doctors").where({ is_active: false }).select("*");
+}
+async function listActiveDoctorsByService(serviceId) {
+    return await db("doctors")
+        .join("doctor_services", "doctors.id", "doctor_services.doctor_id")
+        .join("services", "doctor_services.service_id", "services.id")
+        .where({
+            "doctors.is_active": true,
+            "doctor_services.is_active": true,
+            "services.is_active": true,
+            "services.id": serviceId
+        })
+        .select("doctors.*")
+        .distinct();
+}
 module.exports = {
     createDoctor,
     listDoctors,
@@ -134,6 +152,8 @@ module.exports = {
     getDoctorByEmail,
     isDoctorActive,
     activateDoctor,
+    listDoctors,
     listActiveDoctors,
     listInactiveDoctors,
+    listActiveDoctorsByService,
 };

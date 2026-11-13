@@ -23,6 +23,7 @@ const {
  * PATCH  /:doctorId/services/:serviceId — изменение продолжительности приема.
  * PATCH  /doctors/:id/activate — активация врача.
  * GET    /doctors/active — получение списка активных врачей.
+ * GET    /doctors/:serviceId — получение списка активных врачей по услуге.
  */
 router.post("/", validate(createDoctorSchema), doctorsController.createDoctor);
 router.get("/", doctorsController.listDoctors);
