@@ -14,6 +14,10 @@ app.use("/services", servicesRoutes);
 
 app.use("/doctors/:doctorId/services", doctorServicesRoutes);
 
+app.use((req, res) => {
+    res.status(404).json({ error: "Route not found" });
+});
+
 app.use((err, req, res, next) => {
     // Если заголовки уже отправлены, передаем ошибку следующему middleware
     if (res.headersSent) {
@@ -37,7 +41,7 @@ app.use((err, req, res, next) => {
     }
 
     // Ошибки PostgreSQL
-    
+
     //Нарушение UNIQUE
     else if (err.code === "23505") {
         statusCode = 409;
