@@ -13,6 +13,7 @@ const {
  *
  * POST   /         — создание врача.
  * GET    /         — получение списка врачей.
+ * GET    /doctors/:serviceId — получение списка активных врачей по услуге.
  * GET    /:id      — получение врача по ID.
  * PATCH  /:id      — частичное обновление врача.
  * DELETE /:id      — удаление врача.
@@ -23,10 +24,10 @@ const {
  * PATCH  /:doctorId/services/:serviceId — изменение продолжительности приема.
  * PATCH  /doctors/:id/activate — активация врача.
  * GET    /doctors/active — получение списка активных врачей.
- * GET    /doctors/:serviceId — получение списка активных врачей по услуге.
  */
 router.post("/", validate(createDoctorSchema), doctorsController.createDoctor);
 router.get("/", doctorsController.listDoctors);
+router.get("/filter", doctorsController.filterDoctors);
 router.get("/:id", doctorsController.getDoctorById);
 router.patch(
     "/:id",
@@ -49,6 +50,6 @@ router.patch(
     doctorsController.updateDoctorService,
 );
 router.patch("/:id/activate", doctorsController.activateDoctor);
-router.get("/", doctorsController.filterDoctors);
+
 
 module.exports = router;
