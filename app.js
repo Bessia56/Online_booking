@@ -4,7 +4,7 @@ const app = express();
 const patientsRoutes = require("./src/routes/patients.routes");
 const doctorsRoutes = require("./src/routes/doctors.routes");
 const servicesRoutes = require("./src/routes/services.routes");
-const doctorServicesRoutes = require("./src/routes/doctorServices.routes");
+
 
 app.use(express.json());
 
@@ -12,7 +12,6 @@ app.use("/patients", patientsRoutes);
 app.use("/doctors", doctorsRoutes);
 app.use("/services", servicesRoutes);
 
-app.use("/doctors/:doctorId/services", doctorServicesRoutes);
 
 app.use((req, res) => {
     res.status(404).json({ error: "Route not found" });
