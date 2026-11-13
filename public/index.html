@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#172536">
+  <title>Online Booking — Панель управления</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#" aria-label="Online Booking">
+        <span class="brand-mark">+</span>
+        <span><strong>Online Booking</strong><small>Панель управления</small></span>
+      </a>
+      <div class="nav-caption">УПРАВЛЕНИЕ</div>
+      <nav class="main-nav" aria-label="Основная навигация">
+        <button class="nav-link active" data-page="dashboard"><span class="nav-icon">▦</span>Обзор</button>
+        <button class="nav-link" data-page="patients"><span class="nav-icon">♙</span>Пациенты</button>
+        <button class="nav-link" data-page="doctors"><span class="nav-icon">⚕</span>Врачи</button>
+        <button class="nav-link" data-page="services"><span class="nav-icon">▤</span>Услуги</button>
+        <button class="nav-link" data-page="assignments"><span class="nav-icon">⇄</span>Услуги врачей</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <span class="connection-dot"></span>
+        <span id="connection-label">Проверка соединения…</span>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">МЕДИЦИНСКАЯ СИСТЕМА</div>
+          <h1 id="page-title">Обзор</h1>
+        </div>
+        <div class="topbar-right">
+          <span class="local-label">Локальная среда</span>
+          <div class="avatar">А</div>
+        </div>
+      </header>
+
+      <section id="dashboard-page" class="page active">
+        <div class="welcome">
+          <div>
+            <div class="eyebrow light">ONLINE BOOKING</div>
+            <h2>Рабочее пространство<br>медицинского центра</h2>
+            <p>Управляйте пациентами, врачами и услугами в одном месте.</p>
+          </div>
+          <div class="welcome-symbol">✚</div>
+        </div>
+        <div class="stats-grid">
+          <article class="stat-card"><div class="stat-top"><span>Пациенты</span><span class="stat-icon blue">♙</span></div><strong id="stat-patients">—</strong><small>Записей в системе</small></article>
+          <article class="stat-card"><div class="stat-top"><span>Врачи</span><span class="stat-icon teal">⚕</span></div><strong id="stat-doctors">—</strong><small>Всего врачей</small></article>
+          <article class="stat-card"><div class="stat-top"><span>Активные врачи</span><span class="stat-icon green">✓</span></div><strong id="stat-active-doctors">—</strong><small>Доступны для работы</small></article>
+          <article class="stat-card"><div class="stat-top"><span>Услуги</span><span class="stat-icon violet">▤</span></div><strong id="stat-services">—</strong><small>Записей в каталоге</small></article>
+        </div>
+        <div class="content-card">
+          <div class="card-heading"><div><h3>Быстрые действия</h3><p>Перейдите к нужному разделу</p></div></div>
+          <div class="quick-grid">
+            <button class="quick-action" data-go="patients"><span class="quick-icon">♙</span><b>Пациенты</b><small>Создание и поиск</small><span class="quick-arrow">→</span></button>
+            <button class="quick-action" data-go="doctors"><span class="quick-icon">⚕</span><b>Врачи</b><small>Профили и статусы</small><span class="quick-arrow">→</span></button>
+            <button class="quick-action" data-go="services"><span class="quick-icon">▤</span><b>Услуги</b><small>Каталог и стоимость</small><span class="quick-arrow">→</span></button>
+            <button class="quick-action" data-go="assignments"><span class="quick-icon">⇄</span><b>Услуги врачей</b><small>Назначение услуг</small><span class="quick-arrow">→</span></button>
+          </div>
+        </div>
+        <div class="notice"><span>ⓘ</span><div><b>Информация</b><p>Этот интерфейс управляет справочниками и связями. Расписание и запись на приём можно подключить отдельными разделами после реализации соответствующих API-маршрутов.</p></div></div>
+      </section>
+
+      <section id="patients-page" class="page">
+        <div class="section-toolbar">
+          <div><h2>Пациенты</h2><p>Создание, поиск и редактирование карточек пациентов</p></div>
+          <button class="btn btn-primary" id="add-patient">＋ Добавить пациента</button>
+        </div>
+        <div class="content-card">
+          <div class="table-tools">
+            <label class="search-box"><span>⌕</span><input id="patients-search" placeholder="Поиск по имени, телефону или email"></label>
+            <button class="btn btn-secondary" id="refresh-patients">↻ Обновить</button>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Пациент</th><th>Телефон</th><th>Email</th><th class="actions-col">Действия</th></tr></thead><tbody id="patients-table"></tbody></table></div>
+          <div class="table-footer" id="patients-count"></div>
+        </div>
+      </section>
+
+      <section id="doctors-page" class="page">
+        <div class="section-toolbar">
+          <div><h2>Врачи</h2><p>Профили врачей, статусы и фильтрация</p></div>
+          <button class="btn btn-primary" id="add-doctor">＋ Добавить врача</button>
+        </div>
+        <div class="content-card">
+          <div class="table-tools wrap-tools">
+            <label class="search-box"><span>⌕</span><input id="doctors-search" placeholder="Поиск по имени, телефону или email"></label>
+            <select id="doctors-status" class="filter-select"><option value="">Все статусы</option><option value="true">Активные</option><option value="false">Неактивные</option></select>
+            <button class="btn btn-secondary" id="refresh-doctors">↻ Обновить</button>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Врач</th><th>Телефон</th><th>Email</th><th>Статус</th><th class="actions-col">Действия</th></tr></thead><tbody id="doctors-table"></tbody></table></div>
+          <div class="table-footer" id="doctors-count"></div>
+        </div>
+      </section>
+
+      <section id="services-page" class="page">
+        <div class="section-toolbar">
+          <div><h2>Услуги</h2><p>Каталог медицинских услуг и стоимость</p></div>
+          <button class="btn btn-primary" id="add-service">＋ Добавить услугу</button>
+        </div>
+        <div class="content-card">
+          <div class="table-tools">
+            <label class="search-box"><span>⌕</span><input id="services-search" placeholder="Поиск по названию или описанию"></label>
+            <button class="btn btn-secondary" id="refresh-services">↻ Обновить</button>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Услуга</th><th>Описание</th><th>Стоимость</th><th>Статус</th><th class="actions-col">Действия</th></tr></thead><tbody id="services-table"></tbody></table></div>
+          <div class="table-footer" id="services-count"></div>
+        </div>
+      </section>
+
+      <section id="assignments-page" class="page">
+        <div class="section-toolbar">
+          <div><h2>Услуги врачей</h2><p>Назначайте врачам услуги и задавайте длительность приёма</p></div>
+          <button class="btn btn-primary" id="add-assignment">＋ Назначить услугу</button>
+        </div>
+        <div class="content-card">
+          <div class="table-tools wrap-tools">
+            <select id="assignment-doctor-filter" class="filter-select"><option value="">Выберите врача для просмотра</option></select>
+            <button class="btn btn-secondary" id="refresh-assignments">↻ Обновить</button>
+          </div>
+          <div class="empty-state" id="assignments-empty"><div class="empty-icon">⇄</div><b>Выберите врача</b><p>Чтобы увидеть назначенные ему услуги, выберите врача в списке выше.</p></div>
+          <div class="table-wrap hidden" id="assignments-table-wrap"><table><thead><tr><th>Услуга</th><th>Стоимость</th><th>Длительность</th><th class="actions-col">Действия</th></tr></thead><tbody id="assignments-table"></tbody></table></div>
+        </div>
+      </section>
+
+      <div id="toast-region" class="toast-region" aria-live="polite"></div>
+    </main>
+  </div>
+
+  <dialog id="entity-dialog" class="dialog">
+    <form id="entity-form" method="dialog">
+      <div class="dialog-header"><div><div class="eyebrow" id="dialog-eyebrow">ФОРМА</div><h2 id="dialog-title">Новая запись</h2></div><button type="button" class="icon-button" id="dialog-close" aria-label="Закрыть">×</button></div>
+      <div id="dialog-fields" class="form-grid"></div>
+      <div class="dialog-actions"><button type="button" class="btn btn-secondary" id="dialog-cancel">Отмена</button><button type="submit" class="btn btn-primary" id="dialog-submit">Сохранить</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="confirm-dialog" class="dialog confirm-dialog">
+    <form method="dialog"><div class="dialog-header"><div><div class="eyebrow">ПОДТВЕРЖДЕНИЕ</div><h2 id="confirm-title">Подтвердите действие</h2></div><button type="button" class="icon-button" id="confirm-close">×</button></div><p id="confirm-text"></p><div class="dialog-actions"><button type="button" class="btn btn-secondary" id="confirm-cancel">Отмена</button><button type="submit" class="btn btn-danger" id="confirm-accept">Подтвердить</button></div></form>
+  </dialog>
+</body>
+</html>
