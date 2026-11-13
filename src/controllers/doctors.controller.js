@@ -308,6 +308,18 @@ async function activateDoctor(req, res) {
     res.status(200).json(updatedDoctor);
 }
 
+async function listActiveDoctors(req, res) {
+    const activeDoctors = await doctorsModel.listActiveDoctors();
+
+    res.status(200).json(activeDoctors);
+}
+
+async function listInactiveDoctors(req, res) {
+    const inactiveDoctors = await doctorsModel.listInactiveDoctors();
+
+    res.status(200).json(inactiveDoctors);
+}
+
 module.exports = {
     createDoctor,
     listDoctors,
@@ -320,4 +332,6 @@ module.exports = {
     getDoctorServiceById,
     updateDoctorService,
     activateDoctor,
+    listActiveDoctors,
+    listInactiveDoctors,
 };

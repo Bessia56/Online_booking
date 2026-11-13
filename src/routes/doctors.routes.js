@@ -20,20 +20,34 @@ const {
  * DELETE /:id/services/:serviceId — удаление услуги у врача.
  * GET    /:id/services          — получение списка услуг врача.
  * GET    /:doctorId/services/:serviceId — получение конкретной услуги врача.
- * PATCH  /:doctorId/services/:serviceId — изменение продолжительности приема.  
+ * PATCH  /:doctorId/services/:serviceId — изменение продолжительности приема.
  * PATCH  /doctors/:id/activate — активация врача.
+ * GET    /doctors/active — получение списка активных врачей.
  */
 router.post("/", validate(createDoctorSchema), doctorsController.createDoctor);
 router.get("/", doctorsController.listDoctors);
 router.get("/:id", doctorsController.getDoctorById);
-router.patch("/:id", validate(updateDoctorSchema), doctorsController.updateDoctor);
+router.patch(
+    "/:id",
+    validate(updateDoctorSchema),
+    doctorsController.updateDoctor,
+);
 router.delete("/:id", doctorsController.deleteDoctor);
 router.post("/:doctorId/services", doctorsController.addServiceToDoctor);
-router.delete("/:doctorId/services/:serviceId", doctorsController.removeServiceFromDoctor); 
-router.get("/:id/services", doctorsController.listDoctorServices); 
-router.get("/:doctorId/services/:serviceId", doctorsController.getDoctorServiceById);
-router.patch("/:doctorId/services/:serviceId", doctorsController.updateDoctorService);
+router.delete(
+    "/:doctorId/services/:serviceId",
+    doctorsController.removeServiceFromDoctor,
+);
+router.get("/:id/services", doctorsController.listDoctorServices);
+router.get(
+    "/:doctorId/services/:serviceId",
+    doctorsController.getDoctorServiceById,
+);
+router.patch(
+    "/:doctorId/services/:serviceId",
+    doctorsController.updateDoctorService,
+);
 router.patch("/:id/activate", doctorsController.activateDoctor);
-
+router.get("/", doctorsController.listDoctors);
 
 module.exports = router;

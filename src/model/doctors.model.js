@@ -108,7 +108,21 @@ async function activateDoctor(doctorId) {
         .returning("*");
 
     return doctor;
-}
+};
+
+async function listActiveDoctors() {
+    const activeDoctors = await db("doctors")
+        .where({ is_active: true })
+        .select("*");
+    return activeDoctors;
+};
+
+async function listInactiveDoctors() {
+    const inactiveDoctors = await db("doctors")
+        .where({ is_active: false })
+        .select("*");
+    return inactiveDoctors;
+};
 
 module.exports = {
     createDoctor,
@@ -120,4 +134,6 @@ module.exports = {
     getDoctorByEmail,
     isDoctorActive,
     activateDoctor,
+    listActiveDoctors,
+    listInactiveDoctors,
 };
