@@ -5,12 +5,14 @@ const app = express();
 const patientsRoutes = require("./src/routes/patients.routes");
 const doctorsRoutes = require("./src/routes/doctors.routes");
 const servicesRoutes = require("./src/routes/services.routes");
+const doctorSchedulesRoutes = require("./src/routes/doctorSchedules.routes");
 
 app.use(express.json());
 
 app.use("/patients", patientsRoutes);
 app.use("/doctors", doctorsRoutes);
 app.use("/services", servicesRoutes);
+app.use("/doctors/:doctorId/schedules", doctorSchedulesRoutes);
 
 app.use(express.static(path.join(__dirname, "public")));
 
