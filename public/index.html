@@ -22,6 +22,7 @@
         <button class="nav-link" data-page="doctors"><span class="nav-icon">⚕</span>Врачи</button>
         <button class="nav-link" data-page="services"><span class="nav-icon">▤</span>Услуги</button>
         <button class="nav-link" data-page="assignments"><span class="nav-icon">⇄</span>Услуги врачей</button>
+        <button class="nav-link" data-page="schedules"><span class="nav-icon">◷</span>Расписание врачей</button>
       </nav>
       <div class="sidebar-bottom">
         <span class="connection-dot"></span>
@@ -63,6 +64,7 @@
             <button class="quick-action" data-go="doctors"><span class="quick-icon">⚕</span><b>Врачи</b><small>Профили и статусы</small><span class="quick-arrow">→</span></button>
             <button class="quick-action" data-go="services"><span class="quick-icon">▤</span><b>Услуги</b><small>Каталог и стоимость</small><span class="quick-arrow">→</span></button>
             <button class="quick-action" data-go="assignments"><span class="quick-icon">⇄</span><b>Услуги врачей</b><small>Назначение услуг</small><span class="quick-arrow">→</span></button>
+            <button class="quick-action" data-go="schedules"><span class="quick-icon">◷</span><b>Расписание врачей</b><small>Рабочие интервалы</small><span class="quick-arrow">→</span></button>
           </div>
         </div>
         <div class="notice"><span>ⓘ</span><div><b>Информация</b><p>Этот интерфейс управляет справочниками и связями. Расписание и запись на приём можно подключить отдельными разделами после реализации соответствующих API-маршрутов.</p></div></div>
@@ -126,6 +128,31 @@
           </div>
           <div class="empty-state" id="assignments-empty"><div class="empty-icon">⇄</div><b>Выберите врача</b><p>Чтобы увидеть назначенные ему услуги, выберите врача в списке выше.</p></div>
           <div class="table-wrap hidden" id="assignments-table-wrap"><table><thead><tr><th>Услуга</th><th>Стоимость</th><th>Длительность</th><th class="actions-col">Действия</th></tr></thead><tbody id="assignments-table"></tbody></table></div>
+        </div>
+      </section>
+
+      <section id="schedules-page" class="page">
+        <div class="section-toolbar">
+          <div><h2>Расписание врачей</h2><p>Управление еженедельными рабочими интервалами врачей</p></div>
+          <button class="btn btn-primary" id="add-schedule">＋ Добавить интервал</button>
+        </div>
+        <div class="content-card">
+          <div class="table-tools wrap-tools">
+            <select id="schedule-doctor-filter" class="filter-select"><option value="">Выберите врача</option></select>
+            <select id="schedule-day-filter" class="filter-select">
+              <option value="">Все дни недели</option>
+              <option value="1">Понедельник</option><option value="2">Вторник</option>
+              <option value="3">Среда</option><option value="4">Четверг</option>
+              <option value="5">Пятница</option><option value="6">Суббота</option>
+              <option value="7">Воскресенье</option>
+            </select>
+            <button class="btn btn-secondary" id="refresh-schedules">↻ Обновить</button>
+          </div>
+          <div class="empty-state" id="schedules-empty"><div class="empty-icon">◷</div><b>Выберите врача</b><p>Чтобы посмотреть его рабочие интервалы, выберите врача выше.</p></div>
+          <div class="table-wrap hidden" id="schedules-table-wrap">
+            <table><thead><tr><th>День недели</th><th>Начало</th><th>Окончание</th><th>Статус</th><th class="actions-col">Действия</th></tr></thead><tbody id="schedules-table"></tbody></table>
+          </div>
+          <div class="table-footer" id="schedules-count"></div>
         </div>
       </section>
 

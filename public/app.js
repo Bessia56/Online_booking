@@ -1,5 +1,5 @@
 const API = ""; // Фронтенд раздаётся тем же Express-сервером, поэтому используем относительные URL.
-const state = { patients: [], doctors: [], services: [], assignments: [], currentDoctorId: null };
+const state = { patients: [], doctors: [], services: [], assignments: [], schedules: [], currentDoctorId: null, currentScheduleDoctorId: null };
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
@@ -43,12 +43,13 @@ function setConnection(online, label) {
 function setPage(page) {
   $$(".page").forEach(el => el.classList.toggle("active", el.id === `${page}-page`));
   $$(".nav-link").forEach(el => el.classList.toggle("active", el.dataset.page === page));
-  const titles = { dashboard:"Обзор", patients:"Пациенты", doctors:"Врачи", services:"Услуги", assignments:"Услуги врачей" };
+  const titles = { dashboard:"Обзор", patients:"Пациенты", doctors:"Врачи", services:"Услуги", assignments:"Услуги врачей", schedules:"Расписание врачей" };
   $("#page-title").textContent = titles[page] || "Обзор";
   if (page === "patients") loadPatients();
   if (page === "doctors") loadDoctors();
   if (page === "services") loadServices();
   if (page === "assignments") loadAssignmentDoctors();
+  if (page === "schedules") loadScheduleDoctors();
 }
 function showDialog(title, fields, onSave, eyebrow = "УПРАВЛЕНИЕ ЗАПИСЯМИ") {
   $("#dialog-title").textContent = title;
@@ -275,6 +276,115 @@ async function openAssignmentForm(serviceId) {
   } catch (error) { toast(error.message, true); }
 }
 
+const WEEK_DAYS = [
+  { value: 1, label: "Понедельник" },
+  { value: 2, label: "Вторник" },
+  { value: 3, label: "Среда" },
+  { value: 4, label: "Четверг" },
+  { value: 5, label: "Пятница" },
+  { value: 6, label: "Суббота" },
+  { value: 7, label: "Воскресенье" }
+];
+
+async function loadScheduleDoctors() {
+  try {
+    const doctors = await api("/doctors?is_active=true");
+    state.doctors = doctors;
+    const select = $("#schedule-doctor-filter");
+    const selected = state.currentScheduleDoctorId || select.value;
+    select.innerHTML = `<option value="">Выберите врача</option>` + doctors.map(d =>
+      `<option value="${esc(d.id)}">${esc(fullName(d))} · ID ${esc(d.id)}</option>`
+    ).join("");
+    if (selected && doctors.some(d => String(d.id) === String(selected))) select.value = selected;
+    if (select.value) {
+      state.currentScheduleDoctorId = select.value;
+      await loadSchedules();
+    } else {
+      state.currentScheduleDoctorId = null;
+      state.schedules = [];
+      renderSchedules();
+    }
+  } catch (error) {
+    toast(`Не удалось загрузить список врачей: ${error.message}`, true);
+  }
+}
+
+async function loadSchedules() {
+  const doctorId = $("#schedule-doctor-filter").value;
+  if (!doctorId) return;
+  state.currentScheduleDoctorId = doctorId;
+  try {
+    const day = $("#schedule-day-filter").value;
+    const path = day
+      ? `/doctors/${doctorId}/schedules/day/${day}`
+      : `/doctors/${doctorId}/schedules`;
+    state.schedules = await api(path);
+    renderSchedules();
+    setConnection(true, "API подключён");
+  } catch (error) {
+    toast(`Не удалось загрузить расписание: ${error.message}`, true);
+  }
+}
+
+function renderSchedules() {
+  const table = $("#schedules-table");
+  const empty = $("#schedules-empty");
+  const wrap = $("#schedules-table-wrap");
+  if (!$("#schedule-doctor-filter").value) {
+    empty.classList.remove("hidden");
+    wrap.classList.add("hidden");
+    empty.innerHTML = `<div class="empty-icon">◷</div><b>Выберите врача</b><p>Чтобы посмотреть его рабочие интервалы, выберите врача выше.</p>`;
+    $("#schedules-count").textContent = "";
+    return;
+  }
+  empty.classList.add("hidden");
+  wrap.classList.remove("hidden");
+  table.innerHTML = state.schedules.map(item => {
+    const day = WEEK_DAYS.find(d => d.value === Number(item.day_of_week))?.label || `День ${item.day_of_week}`;
+    const active = item.is_active !== false;
+    return `<tr>
+      <td><span class="person-name">${esc(day)}</span><span class="subtext">ID интервала: ${esc(item.id)}</span></td>
+      <td>${esc(String(item.start_time).slice(0, 5))}</td>
+      <td>${esc(String(item.end_time).slice(0, 5))}</td>
+      <td>${statusPill(active)}</td>
+      <td><div class="row-actions">
+        <button class="action-btn" data-edit-schedule="${esc(item.id)}">Изменить</button>
+        ${active ? `<button class="action-btn danger" data-deactivate-schedule="${esc(item.id)}">Деактивировать</button>` : `<span class="subtext">Неактивен</span>`}
+      </div></td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="5"><div class="empty-state">Рабочие интервалы не найдены</div></td></tr>`;
+  $("#schedules-count").textContent = `Интервалов: ${state.schedules.length}`;
+}
+
+function scheduleFields(schedule = {}) {
+  return [
+    { name: "day_of_week", label: "День недели", type: "select", required: true, value: schedule.day_of_week ?? 1,
+      options: WEEK_DAYS.map(day => ({ value: day.value, label: day.label })) },
+    { name: "start_time", label: "Начало работы", type: "time", required: true, value: String(schedule.start_time || "09:00").slice(0, 5) },
+    { name: "end_time", label: "Окончание работы", type: "time", required: true, value: String(schedule.end_time || "18:00").slice(0, 5) }
+  ];
+}
+
+function openScheduleForm(schedule = null) {
+  const doctorId = $("#schedule-doctor-filter").value;
+  if (!doctorId) { toast("Сначала выберите врача", true); return; }
+  showDialog(schedule ? "Изменить рабочий интервал" : "Добавить рабочий интервал", scheduleFields(schedule), async values => {
+    const payload = {
+      day_of_week: Number(values.day_of_week),
+      start_time: values.start_time,
+      end_time: values.end_time
+    };
+    if (schedule) {
+      // Контроллер updateSchedule ожидает объект scheduleData в теле запроса.
+      await api(`/doctors/${doctorId}/schedules/${schedule.id}`, { method: "PATCH", body: { scheduleData: payload } });
+    } else {
+      await api(`/doctors/${doctorId}/schedules`, { method: "POST", body: payload });
+    }
+    toast(schedule ? "Рабочий интервал обновлён" : "Рабочий интервал добавлен");
+    await loadSchedules();
+  });
+}
+
 function bindEvents() {
   $$(".nav-link").forEach(button => button.addEventListener("click", () => setPage(button.dataset.page)));
   $$("[data-go]").forEach(button => button.addEventListener("click", () => setPage(button.dataset.go)));
@@ -282,15 +392,19 @@ function bindEvents() {
   $("#add-doctor").addEventListener("click", () => openDoctorForm());
   $("#add-service").addEventListener("click", () => openServiceForm());
   $("#add-assignment").addEventListener("click", () => openAssignmentForm());
+  $("#add-schedule").addEventListener("click", () => openScheduleForm());
   $("#refresh-patients").addEventListener("click", loadPatients);
   $("#refresh-doctors").addEventListener("click", loadDoctors);
   $("#refresh-services").addEventListener("click", loadServices);
   $("#refresh-assignments").addEventListener("click", loadAssignments);
+  $("#refresh-schedules").addEventListener("click", loadSchedules);
   $("#patients-search").addEventListener("input", renderPatients);
   $("#doctors-search").addEventListener("input", renderDoctors);
   $("#services-search").addEventListener("input", renderServices);
   $("#doctors-status").addEventListener("change", loadDoctors);
   $("#assignment-doctor-filter").addEventListener("change", loadAssignments);
+  $("#schedule-doctor-filter").addEventListener("change", loadSchedules);
+  $("#schedule-day-filter").addEventListener("change", loadSchedules);
   $("#dialog-close").addEventListener("click", closeEntityDialog);
   $("#dialog-cancel").addEventListener("click", closeEntityDialog);
   $("#confirm-close").addEventListener("click", () => $("#confirm-dialog").close());
@@ -326,6 +440,19 @@ function bindEvents() {
       }, "Деактивировать");
     }
     if (t.dataset.editAssignment) openAssignmentForm(t.dataset.editAssignment);
+    if (t.dataset.editSchedule) {
+      const schedule = state.schedules.find(x => String(x.id) === t.dataset.editSchedule);
+      if (schedule) openScheduleForm(schedule);
+    }
+    if (t.dataset.deactivateSchedule) {
+      const schedule = state.schedules.find(x => String(x.id) === t.dataset.deactivateSchedule);
+      confirmAction("Деактивировать интервал?", "Этот рабочий интервал будет помечен как неактивный.", async () => {
+        const doctorId = $("#schedule-doctor-filter").value;
+        await api(`/doctors/${doctorId}/schedules/${schedule.id}`, { method: "DELETE" });
+        toast("Рабочий интервал деактивирован");
+        await loadSchedules();
+      }, "Деактивировать");
+    }
     if (t.dataset.removeAssignment) {
       const doctorId = $("#assignment-doctor-filter").value;
       const serviceId = t.dataset.removeAssignment;
