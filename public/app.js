@@ -3,18 +3,51 @@ const state = { patients: [], doctors: [], services: [], assignments: [], schedu
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
+function getFriendlyErrorMessage(data, status) {
+  const serverMessage = typeof data === "string"
+    ? data
+    : (data?.error || data?.message || "");
+
+  const knownMessages = {
+    "Schedule overlaps with an existing interval":
+      "Нельзя сохранить интервал: выбранное время пересекается с другим рабочим интервалом этого врача. Измени день или время.",
+    "Doctor not found or inactive":
+      "Не удалось найти активного врача. Обнови список врачей и выбери другого.",
+    "Doctor is inactive":
+      "Нельзя выполнить действие: врач неактивен. Сначала активируй врача.",
+    "Doctor not found": "Врач не найден. Обнови список и попробуй ещё раз.",
+    "Schedule not found": "Рабочий интервал не найден. Возможно, его уже деактивировали.",
+  };
+
+  if (knownMessages[serverMessage]) return knownMessages[serverMessage];
+  if (status === 409) return "Действие невозможно из-за конфликта с существующей записью. Проверь данные и попробуй ещё раз.";
+  if (status === 404) return "Запрашиваемая запись не найдена. Обнови список и попробуй ещё раз.";
+  if (status === 400) return "Проверь введённые данные: возможно, одно из полей заполнено неверно.";
+  if (status >= 500) return "На сервере произошла ошибка. Попробуй ещё раз позже.";
+  return serverMessage || `Не удалось выполнить действие (ошибка ${status}).`;
+}
+
 async function api(path, options = {}) {
   const config = { ...options, headers: { ...(options.headers || {}) } };
   if (config.body && typeof config.body !== "string") {
     config.headers["Content-Type"] = "application/json";
     config.body = JSON.stringify(config.body);
   }
-  const response = await fetch(`${API}${path}`, config);
+
+  let response;
+  try {
+    response = await fetch(`${API}${path}`, config);
+  } catch (error) {
+    throw new Error("Не удалось связаться с сервером. Проверь, запущен ли сервер, и повтори попытку.");
+  }
+
   const contentType = response.headers.get("content-type") || "";
-  const data = contentType.includes("application/json") ? await response.json() : await response.text();
+  const data = contentType.includes("application/json")
+    ? await response.json()
+    : await response.text();
+
   if (!response.ok) {
-    const message = data?.error || data?.message || `Ошибка HTTP ${response.status}`;
-    throw new Error(message);
+    throw new Error(getFriendlyErrorMessage(data, response.status));
   }
   return data;
 }
@@ -22,9 +55,22 @@ async function api(path, options = {}) {
 function toast(message, isError = false) {
   const node = document.createElement("div");
   node.className = `toast${isError ? " error" : ""}`;
-  node.textContent = message;
+  node.setAttribute("role", isError ? "alert" : "status");
+
+  if (isError) {
+    const title = document.createElement("strong");
+    title.className = "toast-title";
+    title.textContent = "Не удалось выполнить действие";
+    const text = document.createElement("span");
+    text.className = "toast-message";
+    text.textContent = message;
+    node.append(title, text);
+  } else {
+    node.textContent = message;
+  }
+
   $("#toast-region").append(node);
-  setTimeout(() => node.remove(), 4200);
+  setTimeout(() => node.remove(), isError ? 6500 : 4200);
 }
 function esc(value = "") {
   return String(value).replace(/[&<>"']/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[ch]));
