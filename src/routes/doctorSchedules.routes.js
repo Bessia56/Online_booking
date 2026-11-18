@@ -13,12 +13,12 @@ const {
 /**
  * Маршруты для управления расписанием врача.
  *
- * POST    /                       — создание рабочего интервала
- * GET     /                       — получение расписания врача
- * GET     /day/:dayOfWeek         — получение расписания за день
- * GET     /:scheduleId            — получение конкретного интервала
- * PATCH   /:scheduleId            — изменение интервала
- * DELETE  /:scheduleId            — деактивация интервала
+ * POST    /                  — создание рабочего интервала
+ * GET     /                  — получение всего расписания
+ * GET     /day/:dayOfWeek    — получение расписания за день
+ * GET     /:scheduleId       — получение конкретного интервала
+ * PATCH   /:scheduleId       — обновление интервала
+ * DELETE  /:scheduleId       — деактивация интервала
  */
 
 router.post(
@@ -28,6 +28,8 @@ router.post(
 );
 
 router.get("/", doctorSchedulesController.listDoctorSchedules);
+
+
 
 router.get(
     "/day/:dayOfWeek",
@@ -43,5 +45,6 @@ router.patch(
 );
 
 router.delete("/:scheduleId", doctorSchedulesController.deactivateSchedule);
+
 
 module.exports = router;
