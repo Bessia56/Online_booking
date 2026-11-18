@@ -220,7 +220,7 @@ function openServiceForm(service) {
 async function loadAssignmentDoctors() {
   try {
     // Список врачей загружается без фильтра; в select показываем активных.
-    const doctors = await api("/doctors?is_active=true");
+    const doctors = await api("/doctors/filter?is_active=true");
     state.doctors = doctors;
     const select = $("#assignment-doctor-filter");
     const selected = state.currentDoctorId || select.value;
@@ -288,100 +288,116 @@ const WEEK_DAYS = [
 
 async function loadScheduleDoctors() {
   try {
-    const doctors = await api("/doctors?is_active=true");
+    // Загружаем активных врачей и расписание каждого из них.
+    const doctors = await api("/doctors/filter?is_active=true");
     state.doctors = doctors;
-    const select = $("#schedule-doctor-filter");
-    const selected = state.currentScheduleDoctorId || select.value;
-    select.innerHTML = `<option value="">Выберите врача</option>` + doctors.map(d =>
-      `<option value="${esc(d.id)}">${esc(fullName(d))} · ID ${esc(d.id)}</option>`
-    ).join("");
-    if (selected && doctors.some(d => String(d.id) === String(selected))) select.value = selected;
-    if (select.value) {
-      state.currentScheduleDoctorId = select.value;
-      await loadSchedules();
-    } else {
-      state.currentScheduleDoctorId = null;
-      state.schedules = [];
-      renderSchedules();
-    }
-  } catch (error) {
-    toast(`Не удалось загрузить список врачей: ${error.message}`, true);
-  }
-}
 
-async function loadSchedules() {
-  const doctorId = $("#schedule-doctor-filter").value;
-  if (!doctorId) return;
-  state.currentScheduleDoctorId = doctorId;
-  try {
-    const day = $("#schedule-day-filter").value;
-    const path = day
-      ? `/doctors/${doctorId}/schedules/day/${day}`
-      : `/doctors/${doctorId}/schedules`;
-    state.schedules = await api(path);
+    const schedulesByDoctor = await Promise.all(
+      doctors.map(async doctor => {
+        const schedules = await api(`/doctors/${doctor.id}/schedules`);
+        return schedules.map(schedule => ({ ...schedule, doctor_id: doctor.id }));
+      })
+    );
+
+    state.schedules = schedulesByDoctor.flat();
     renderSchedules();
     setConnection(true, "API подключён");
   } catch (error) {
-    toast(`Не удалось загрузить расписание: ${error.message}`, true);
+    toast(`Не удалось загрузить расписание врачей: ${error.message}`, true);
   }
 }
 
 function renderSchedules() {
-  const table = $("#schedules-table");
-  const empty = $("#schedules-empty");
-  const wrap = $("#schedules-table-wrap");
-  if (!$("#schedule-doctor-filter").value) {
-    empty.classList.remove("hidden");
-    wrap.classList.add("hidden");
-    empty.innerHTML = `<div class="empty-icon">◷</div><b>Выберите врача</b><p>Чтобы посмотреть его рабочие интервалы, выберите врача выше.</p>`;
-    $("#schedules-count").textContent = "";
+  const container = $("#schedules-list");
+  if (!state.doctors.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">⚕</div><b>Активные врачи не найдены</b><p>Добавьте или активируйте врача, чтобы назначить ему рабочее расписание.</p></div>`;
+    $("#schedules-count").textContent = "Врачей: 0 · Интервалов: 0";
     return;
   }
-  empty.classList.add("hidden");
-  wrap.classList.remove("hidden");
-  table.innerHTML = state.schedules.map(item => {
-    const day = WEEK_DAYS.find(d => d.value === Number(item.day_of_week))?.label || `День ${item.day_of_week}`;
-    const active = item.is_active !== false;
-    return `<tr>
-      <td><span class="person-name">${esc(day)}</span><span class="subtext">ID интервала: ${esc(item.id)}</span></td>
-      <td>${esc(String(item.start_time).slice(0, 5))}</td>
-      <td>${esc(String(item.end_time).slice(0, 5))}</td>
-      <td>${statusPill(active)}</td>
-      <td><div class="row-actions">
-        <button class="action-btn" data-edit-schedule="${esc(item.id)}">Изменить</button>
-        ${active ? `<button class="action-btn danger" data-deactivate-schedule="${esc(item.id)}">Деактивировать</button>` : `<span class="subtext">Неактивен</span>`}
-      </div></td>
-    </tr>`;
-  }).join("") || `<tr><td colspan="5"><div class="empty-state">Рабочие интервалы не найдены</div></td></tr>`;
-  $("#schedules-count").textContent = `Интервалов: ${state.schedules.length}`;
+
+  const dayName = day => WEEK_DAYS.find(item => item.value === Number(day))?.label || `День ${day}`;
+  container.innerHTML = state.doctors.map(doctor => {
+    const doctorSchedules = state.schedules
+      .filter(item => String(item.doctor_id) === String(doctor.id))
+      .sort((a, b) => Number(a.day_of_week) - Number(b.day_of_week) || String(a.start_time).localeCompare(String(b.start_time)));
+
+    const rows = doctorSchedules.length
+      ? doctorSchedules.map(item => {
+          const active = item.is_active !== false;
+          return `<div class="schedule-row ${active ? "" : "is-inactive"}">
+            <div class="schedule-day">${esc(dayName(item.day_of_week))}</div>
+            <div class="schedule-time">${esc(String(item.start_time).slice(0, 5))} <span>—</span> ${esc(String(item.end_time).slice(0, 5))}</div>
+            <div class="schedule-status">${statusPill(active)}</div>
+            <div class="schedule-actions">
+              <button class="action-btn" data-edit-schedule="${esc(item.id)}">Изменить</button>
+              ${active ? `<button class="action-btn danger" data-deactivate-schedule="${esc(item.id)}">Деактивировать</button>` : `<span class="subtext">Неактивен</span>`}
+            </div>
+          </div>`;
+        }).join("")
+      : `<div class="schedule-no-items">Рабочие интервалы пока не добавлены.</div>`;
+
+    return `<article class="schedule-doctor-card">
+      <div class="schedule-doctor-heading">
+        <div class="person-cell">
+          <span class="person-avatar">${esc(initials(doctor.first_name, doctor.last_name))}</span>
+          <span><span class="person-name">${esc(fullName(doctor))}</span><span class="subtext">Врач · ID ${esc(doctor.id)}</span></span>
+        </div>
+        <span class="schedule-total">Интервалов: ${doctorSchedules.length}</span>
+      </div>
+      <div class="schedule-rows">${rows}</div>
+    </article>`;
+  }).join("");
+
+  $("#schedules-count").textContent = `Врачей: ${state.doctors.length} · Интервалов: ${state.schedules.length}`;
 }
 
-function scheduleFields(schedule = {}) {
-  return [
-    { name: "day_of_week", label: "День недели", type: "select", required: true, value: schedule.day_of_week ?? 1,
+function scheduleFields(schedule = null) {
+  const fields = [];
+  if (!schedule) {
+    fields.push({
+      name: "doctor_id", label: "Врач", type: "select", required: true, full: true,
+      value: state.doctors[0]?.id ?? "",
+      options: state.doctors.map(doctor => ({ value: doctor.id, label: `${fullName(doctor)} · ID ${doctor.id}` }))
+    });
+  }
+  fields.push(
+    { name: "day_of_week", label: "День недели", type: "select", required: true, value: schedule?.day_of_week ?? 1,
       options: WEEK_DAYS.map(day => ({ value: day.value, label: day.label })) },
-    { name: "start_time", label: "Начало работы", type: "time", required: true, value: String(schedule.start_time || "09:00").slice(0, 5) },
-    { name: "end_time", label: "Окончание работы", type: "time", required: true, value: String(schedule.end_time || "18:00").slice(0, 5) }
-  ];
+    { name: "start_time", label: "Начало работы", type: "time", required: true, value: String(schedule?.start_time || "09:00").slice(0, 5) },
+    { name: "end_time", label: "Окончание работы", type: "time", required: true, value: String(schedule?.end_time || "18:00").slice(0, 5) }
+  );
+  return fields;
 }
 
 function openScheduleForm(schedule = null) {
-  const doctorId = $("#schedule-doctor-filter").value;
-  if (!doctorId) { toast("Сначала выберите врача", true); return; }
-  showDialog(schedule ? "Изменить рабочий интервал" : "Добавить рабочий интервал", scheduleFields(schedule), async values => {
+  if (!state.doctors.length) {
+    toast("Нет активных врачей. Сначала добавьте или активируйте врача.", true);
+    return;
+  }
+
+  const doctorId = schedule ? schedule.doctor_id : null;
+  const doctor = schedule ? state.doctors.find(item => String(item.id) === String(doctorId)) : null;
+  const title = schedule
+    ? `Изменить интервал · ${doctor ? fullName(doctor) : `Врач №${doctorId}`}`
+    : "Добавить рабочий интервал";
+
+  showDialog(title, scheduleFields(schedule), async values => {
+    const targetDoctorId = schedule ? doctorId : values.doctor_id;
     const payload = {
       day_of_week: Number(values.day_of_week),
       start_time: values.start_time,
       end_time: values.end_time
     };
+
     if (schedule) {
-      // Контроллер updateSchedule ожидает объект scheduleData в теле запроса.
-      await api(`/doctors/${doctorId}/schedules/${schedule.id}`, { method: "PATCH", body: { scheduleData: payload } });
+      // API принимает поля интервала непосредственно в req.body.
+      await api(`/doctors/${targetDoctorId}/schedules/${schedule.id}`, { method: "PATCH", body: payload });
     } else {
-      await api(`/doctors/${doctorId}/schedules`, { method: "POST", body: payload });
+      await api(`/doctors/${targetDoctorId}/schedules`, { method: "POST", body: payload });
     }
+
     toast(schedule ? "Рабочий интервал обновлён" : "Рабочий интервал добавлен");
-    await loadSchedules();
+    await loadScheduleDoctors();
   });
 }
 
@@ -397,14 +413,12 @@ function bindEvents() {
   $("#refresh-doctors").addEventListener("click", loadDoctors);
   $("#refresh-services").addEventListener("click", loadServices);
   $("#refresh-assignments").addEventListener("click", loadAssignments);
-  $("#refresh-schedules").addEventListener("click", loadSchedules);
+  $("#refresh-schedules").addEventListener("click", loadScheduleDoctors);
   $("#patients-search").addEventListener("input", renderPatients);
   $("#doctors-search").addEventListener("input", renderDoctors);
   $("#services-search").addEventListener("input", renderServices);
   $("#doctors-status").addEventListener("change", loadDoctors);
   $("#assignment-doctor-filter").addEventListener("change", loadAssignments);
-  $("#schedule-doctor-filter").addEventListener("change", loadSchedules);
-  $("#schedule-day-filter").addEventListener("change", loadSchedules);
   $("#dialog-close").addEventListener("click", closeEntityDialog);
   $("#dialog-cancel").addEventListener("click", closeEntityDialog);
   $("#confirm-close").addEventListener("click", () => $("#confirm-dialog").close());
@@ -447,10 +461,9 @@ function bindEvents() {
     if (t.dataset.deactivateSchedule) {
       const schedule = state.schedules.find(x => String(x.id) === t.dataset.deactivateSchedule);
       confirmAction("Деактивировать интервал?", "Этот рабочий интервал будет помечен как неактивный.", async () => {
-        const doctorId = $("#schedule-doctor-filter").value;
-        await api(`/doctors/${doctorId}/schedules/${schedule.id}`, { method: "DELETE" });
+        await api(`/doctors/${schedule.doctor_id}/schedules/${schedule.id}`, { method: "DELETE" });
         toast("Рабочий интервал деактивирован");
-        await loadSchedules();
+        await loadScheduleDoctors();
       }, "Деактивировать");
     }
     if (t.dataset.removeAssignment) {

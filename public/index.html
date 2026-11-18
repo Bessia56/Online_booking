@@ -133,27 +133,17 @@
 
       <section id="schedules-page" class="page">
         <div class="section-toolbar">
-          <div><h2>Расписание врачей</h2><p>Управление еженедельными рабочими интервалами врачей</p></div>
+          <div><h2>Расписание врачей</h2><p>Еженедельные рабочие интервалы сгруппированы по врачам</p></div>
           <button class="btn btn-primary" id="add-schedule">＋ Добавить интервал</button>
         </div>
-        <div class="content-card">
-          <div class="table-tools wrap-tools">
-            <select id="schedule-doctor-filter" class="filter-select"><option value="">Выберите врача</option></select>
-            <select id="schedule-day-filter" class="filter-select">
-              <option value="">Все дни недели</option>
-              <option value="1">Понедельник</option><option value="2">Вторник</option>
-              <option value="3">Среда</option><option value="4">Четверг</option>
-              <option value="5">Пятница</option><option value="6">Суббота</option>
-              <option value="7">Воскресенье</option>
-            </select>
-            <button class="btn btn-secondary" id="refresh-schedules">↻ Обновить</button>
-          </div>
-          <div class="empty-state" id="schedules-empty"><div class="empty-icon">◷</div><b>Выберите врача</b><p>Чтобы посмотреть его рабочие интервалы, выберите врача выше.</p></div>
-          <div class="table-wrap hidden" id="schedules-table-wrap">
-            <table><thead><tr><th>День недели</th><th>Начало</th><th>Окончание</th><th>Статус</th><th class="actions-col">Действия</th></tr></thead><tbody id="schedules-table"></tbody></table>
-          </div>
-          <div class="table-footer" id="schedules-count"></div>
+        <div class="schedule-list-toolbar">
+          <div><b>Рабочие расписания</b><span>Добавляйте интервалы выбранному врачу через форму</span></div>
+          <button class="btn btn-secondary" id="refresh-schedules">↻ Обновить</button>
         </div>
+        <div id="schedules-list" class="schedules-list">
+          <div class="empty-state"><div class="empty-icon">◷</div><b>Загрузка расписаний</b></div>
+        </div>
+        <div class="table-footer" id="schedules-count"></div>
       </section>
 
       <div id="toast-region" class="toast-region" aria-live="polite"></div>
