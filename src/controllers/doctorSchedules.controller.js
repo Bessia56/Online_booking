@@ -157,7 +157,6 @@ async function updateSchedule(req, res) {
         });
     }
 
-
     // Формируем итоговые данные:
     // новые значения берём из запроса,
     // отсутствующие поля оставляем без изменений.
@@ -179,7 +178,7 @@ async function updateSchedule(req, res) {
     // Проверяем каждый существующий интервал.
     for (const item of doctorSchedules) {
         // Пропускаем интервал, который сейчас обновляем.
-        if (item.id === Number(scheduleId)) {
+        if (item.id === scheduleId) {
             continue;
         }
 
@@ -257,23 +256,23 @@ async function getDoctorSchedulesByDay(req, res) {
 
     if (!doctor) {
         return res.status(404).json({
-            error: "Doctor not found"
+            error: "Doctor not found",
         });
     }
 
     if (!doctor.is_active) {
         return res.status(409).json({
-            error: "Doctor is inactive"
+            error: "Doctor is inactive",
         });
     }
 
     const schedules = await doctorSchedulesModel.getDoctorSchedulesByDay(
         doctorId,
-        dayOfWeek
+        dayOfWeek,
     );
 
     return res.status(200).json(schedules);
-};
+}
 
 module.exports = {
     createSchedule,
