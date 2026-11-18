@@ -37,7 +37,7 @@ async function getScheduleById(doctorId, scheduleId) {
  * Возвращает интервалы врача за определенный день
  */
 async function getDoctorSchedulesByDay(doctorId, dayOfWeek) {
-    return await db("doctor_scheduls").where({
+    return await db("doctor_schedules").where({
         doctor_id: doctorId,
         day_of_week: dayOfWeek,
         is_active: true,
@@ -62,9 +62,22 @@ async function updateSchedule(doctorId, scheduleId, scheduleData) {
 async function deleteSchedule(doctorId, scheduleId) {
     const [scheduls] = await db("doctor_schedules")
         .where({ doctor_id: doctorId, id: scheduleId })
-        .update({ is_active: false });
+        .update({ is_active: false })
+        .returning("*");
+
 
     return scheduls;
+}
+
+/**
+ * Возвращает активных врачей, у которых есть активное расписание.
+ */
+async function listActiveDoctorsWithSchedule() {
+    return await db("doctors")
+        .join("doctor_schedules", "doctors.id", "doctor_schedules.doctor_id")
+        .where("doctors.is_active", true)
+        .andWhere("doctor_schedules.is_active", true)
+        .distinct("doctors.*");
 }
 
 module.exports = {
@@ -74,4 +87,5 @@ module.exports = {
     getDoctorSchedulesByDay,
     updateSchedule,
     deleteSchedule,
+    listActiveDoctorsWithSchedule,
 };
