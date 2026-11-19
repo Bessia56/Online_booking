@@ -29,22 +29,16 @@ router.post(
 );
 
 router.get("/", doctorSchedulesController.listDoctorSchedules);
-
-
-
 router.get(
     "/day/:dayOfWeek",
     doctorSchedulesController.getDoctorSchedulesByDay,
 );
-
 router.get("/:scheduleId", doctorSchedulesController.getScheduleById);
-
 router.patch(
     "/:scheduleId",
     validate(updateScheduleSchema),
     doctorSchedulesController.updateSchedule,
 );
-
 router.delete("/:scheduleId", doctorSchedulesController.deactivateSchedule);
 
 
