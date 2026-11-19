@@ -3,7 +3,7 @@ function validate(schema) {
         try {
             req.body = await schema.validate(req.body, {
                 abortEarly: false,
-                stripUnknown: true
+                stripUnknown: false,
             });
 
             next();
