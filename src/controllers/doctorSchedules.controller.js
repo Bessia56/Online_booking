@@ -67,6 +67,15 @@ async function createSchedule(req, res) {
     return res.status(201).json(newSchedule);
 }
 
+/**
+ * Получает расписание конкретного врача.
+ *
+ * Проверяет существование и активность врача.
+ *
+ * @param {import("express").Request} req - HTTP-запрос с ID врача в параметрах маршрута.
+ * @param {import("express").Response} res - HTTP-ответ.
+ * @returns {Promise<import("express").Response>} Ответ со списком интервалов расписания.
+ */
 async function listDoctorSchedules(req, res) {
     // Получаем ID врача из параметров маршрута.
     const { doctorId } = req.params;
@@ -91,12 +100,29 @@ async function listDoctorSchedules(req, res) {
     return res.status(200).json(doctorSchedules);
 }
 
+/**
+ * Получает список активных врачей, у которых есть активное расписание.
+ *
+ * @param {import("express").Request} req - HTTP-запрос.
+ * @param {import("express").Response} res - HTTP-ответ.
+ * @returns {Promise<import("express").Response>} Ответ со списком врачей.
+ */
 async function listActiveDoctorsWithSchedule(req, res) {
     const doctors = await doctorSchedulesModel.listActiveDoctorsWithSchedule();
 
     return res.status(200).json(doctors);
 }
 
+/**
+ * Получает конкретный интервал расписания врача по ID.
+ *
+ * Проверяет существование и активность врача,
+ * а также наличие указанного интервала.
+ *
+ * @param {import("express").Request} req - HTTP-запрос с ID врача и интервала в параметрах маршрута.
+ * @param {import("express").Response} res - HTTP-ответ.
+ * @returns {Promise<import("express").Response>} Ответ с найденным интервалом.
+ */
 async function getScheduleById(req, res) {
     const { doctorId, scheduleId } = req.params;
 
@@ -128,6 +154,16 @@ async function getScheduleById(req, res) {
     return res.status(200).json(schedule);
 }
 
+/**
+ * Обновляет интервал расписания врача.
+ *
+ * Проверяет существование и активность врача,
+ * наличие интервала и отсутствие пересечений с другими интервалами.
+ *
+ * @param {import("express").Request} req - HTTP-запрос с ID врача, ID интервала и новыми данными.
+ * @param {import("express").Response} res - HTTP-ответ.
+ * @returns {Promise<import("express").Response>} Ответ с обновлённым интервалом.
+ */
 async function updateSchedule(req, res) {
     const { doctorId, scheduleId } = req.params;
     const scheduleData = req.body;
@@ -214,6 +250,16 @@ async function updateSchedule(req, res) {
     return res.status(200).json(updatedSchedule);
 }
 
+/**
+ * Деактивирует интервал расписания врача.
+ *
+ * Проверяет существование и активность врача,
+ * а также наличие указанного интервала.
+ *
+ * @param {import("express").Request} req - HTTP-запрос с ID врача и интервала в параметрах маршрута.
+ * @param {import("express").Response} res - HTTP-ответ.
+ * @returns {Promise<import("express").Response>} Ответ с результатом деактивации.
+ */
 async function deactivateSchedule(req, res) {
     const { doctorId, scheduleId } = req.params;
 
@@ -249,6 +295,15 @@ async function deactivateSchedule(req, res) {
     });
 }
 
+/**
+ * Получает активные интервалы расписания врача за определённый день недели.
+ *
+ * Проверяет существование и активность врача.
+ *
+ * @param {import("express").Request} req - HTTP-запрос с ID врача и номером дня недели.
+ * @param {import("express").Response} res - HTTP-ответ.
+ * @returns {Promise<import("express").Response>} Ответ со списком интервалов.
+ */
 async function getDoctorSchedulesByDay(req, res) {
     const { doctorId, dayOfWeek } = req.params;
 

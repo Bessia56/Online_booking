@@ -1,7 +1,11 @@
 const db = require("../config/db");
 
 /**
- * Добавляет рабочий интервал в расписание врача.
+ * Создаёт новый рабочий интервал в расписании врача.
+ *
+ * @param {string|number} doctorId - ID врача.
+ * @param {Object} scheduleData - Данные рабочего интервала.
+ * @returns {Promise<Object>} Созданный интервал расписания.
  */
 async function createSchedule(doctorId, scheduleData) {
     const [schedule] = await db("doctor_schedules")
@@ -15,7 +19,12 @@ async function createSchedule(doctorId, scheduleData) {
 }
 
 /**
- * Возвращает расписание врача
+ * Получает все интервалы расписания конкретного врача.
+ *
+ * Сортирует интервалы по дню недели и времени начала.
+ *
+ * @param {string|number} doctorId - ID врача.
+ * @returns {Promise<Array<Object>>} Массив интервалов расписания.
  */
 async function listDoctorSchedules(doctorId) {
     return await db("doctor_schedules")
@@ -25,7 +34,11 @@ async function listDoctorSchedules(doctorId) {
 }
 
 /**
- * Получает конкретный интервал врача по ID.
+ * Получает интервал расписания врача по ID.
+ *
+ * @param {string|number} doctorId - ID врача.
+ * @param {string|number} scheduleId - ID интервала расписания.
+ * @returns {Promise<Object|undefined>} Найденный интервал или undefined.
  */
 async function getScheduleById(doctorId, scheduleId) {
     return await db("doctor_schedules")
@@ -34,7 +47,11 @@ async function getScheduleById(doctorId, scheduleId) {
 }
 
 /**
- * Возвращает интервалы врача за определенный день
+ * Получает активные интервалы расписания врача за определённый день недели.
+ *
+ * @param {string|number} doctorId - ID врача.
+ * @param {number|string} dayOfWeek - Номер дня недели (от 1 до 7).
+ * @returns {Promise<Array<Object>>} Массив активных интервалов.
  */
 async function getDoctorSchedulesByDay(doctorId, dayOfWeek) {
     return await db("doctor_schedules").where({
@@ -45,7 +62,12 @@ async function getDoctorSchedulesByDay(doctorId, dayOfWeek) {
 }
 
 /**
- * Обновляет интервал врача.
+ * Обновляет данные интервала расписания врача.
+ *
+ * @param {string|number} doctorId - ID врача.
+ * @param {string|number} scheduleId - ID интервала расписания.
+ * @param {Object} scheduleData - Данные для обновления.
+ * @returns {Promise<Object|undefined>} Обновлённый интервал или undefined.
  */
 async function updateSchedule(doctorId, scheduleId, scheduleData) {
     const [schedule] = await db("doctor_schedules")
@@ -57,7 +79,11 @@ async function updateSchedule(doctorId, scheduleId, scheduleData) {
 }
 
 /**
- * Деактивирует интервал врача.
+ * Деактивирует интервал расписания врача без физического удаления из БД.
+ *
+ * @param {string|number} doctorId - ID врача.
+ * @param {string|number} scheduleId - ID интервала расписания.
+ * @returns {Promise<Object|undefined>} Деактивированный интервал или undefined.
  */
 async function deleteSchedule(doctorId, scheduleId) {
     const [scheduls] = await db("doctor_schedules")
@@ -70,7 +96,11 @@ async function deleteSchedule(doctorId, scheduleId) {
 }
 
 /**
- * Возвращает активных врачей, у которых есть активное расписание.
+ * Получает список активных врачей, у которых есть активное расписание.
+ *
+ * Исключает дублирование врачей, у которых несколько активных интервалов.
+ *
+ * @returns {Promise<Array<Object>>} Массив активных врачей.
  */
 async function listActiveDoctorsWithSchedule() {
     return await db("doctors")

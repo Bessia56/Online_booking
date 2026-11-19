@@ -10,6 +10,7 @@ const {
     updateScheduleSchema,
 } = require("../validator/doctorSchedules.validator");
 
+
 /**
  * Маршруты для управления расписанием врача.
  *
