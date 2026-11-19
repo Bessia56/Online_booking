@@ -1,5 +1,5 @@
 const API = ""; // Фронтенд раздаётся тем же Express-сервером, поэтому используем относительные URL.
-const state = { patients: [], doctors: [], services: [], assignments: [], schedules: [], currentDoctorId: null, currentScheduleDoctorId: null };
+const state = { patients: [], doctors: [], services: [], assignments: [], schedules: [], appointments: [], currentDoctorId: null, currentScheduleDoctorId: null, currentAppointmentPatientId: "" };
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
@@ -17,6 +17,8 @@ function getFriendlyErrorMessage(data, status) {
       "Нельзя выполнить действие: врач неактивен. Сначала активируй врача.",
     "Doctor not found": "Врач не найден. Обнови список и попробуй ещё раз.",
     "Schedule not found": "Рабочий интервал не найден. Возможно, его уже деактивировали.",
+    "Patient not found": "Пациент не найден. Обнови список и попробуй ещё раз.",
+    "Appointment not found": "Запись не найдена. Возможно, она была удалена или изменена.",
   };
 
   if (knownMessages[serverMessage]) return knownMessages[serverMessage];
@@ -89,13 +91,14 @@ function setConnection(online, label) {
 function setPage(page) {
   $$(".page").forEach(el => el.classList.toggle("active", el.id === `${page}-page`));
   $$(".nav-link").forEach(el => el.classList.toggle("active", el.dataset.page === page));
-  const titles = { dashboard:"Обзор", patients:"Пациенты", doctors:"Врачи", services:"Услуги", assignments:"Услуги врачей", schedules:"Расписание врачей" };
+  const titles = { dashboard:"Обзор", patients:"Пациенты", doctors:"Врачи", services:"Услуги", assignments:"Услуги врачей", schedules:"Расписание врачей", appointments:"Записи пациентов" };
   $("#page-title").textContent = titles[page] || "Обзор";
   if (page === "patients") loadPatients();
   if (page === "doctors") loadDoctors();
   if (page === "services") loadServices();
   if (page === "assignments") loadAssignmentDoctors();
   if (page === "schedules") loadScheduleDoctors();
+  if (page === "appointments") loadAppointmentsPage();
 }
 function showDialog(title, fields, onSave, eyebrow = "УПРАВЛЕНИЕ ЗАПИСЯМИ") {
   $("#dialog-title").textContent = title;
@@ -447,6 +450,120 @@ function openScheduleForm(schedule = null) {
   });
 }
 
+function formatAppointmentDateTime(value) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit", month: "2-digit", year: "numeric",
+    hour: "2-digit", minute: "2-digit"
+  }).format(date);
+}
+
+function appointmentStatus(status) {
+  const labels = {
+    pending: "Ожидает подтверждения",
+    confirmed: "Подтверждена",
+    cancelled: "Отменена",
+    completed: "Завершена"
+  };
+  const classes = {
+    pending: "pending", confirmed: "confirmed",
+    cancelled: "cancelled", completed: "completed"
+  };
+  return `<span class="appointment-status ${classes[status] || "unknown"}">${esc(labels[status] || status || "Не указан")}</span>`;
+}
+
+async function loadAppointmentsPage() {
+  try {
+    state.patients = await api("/patients");
+    const select = $("#appointments-patient-filter");
+    const selected = state.currentAppointmentPatientId || select.value;
+    select.innerHTML = `<option value="">Все пациенты</option>` + state.patients
+      .map(patient => `<option value="${esc(patient.id)}">${esc(fullName(patient))} · ID ${esc(patient.id)}</option>`)
+      .join("");
+    if (selected && state.patients.some(patient => String(patient.id) === String(selected))) {
+      select.value = selected;
+      state.currentAppointmentPatientId = selected;
+    } else {
+      select.value = "";
+      state.currentAppointmentPatientId = "";
+    }
+    await loadAppointments();
+  } catch (error) {
+    toast(`Не удалось загрузить список пациентов: ${error.message}`, true);
+  }
+}
+
+async function loadAppointments() {
+  const patientId = $("#appointments-patient-filter").value;
+  state.currentAppointmentPatientId = patientId;
+  try {
+    const path = patientId
+      ? `/appointments/patient/${encodeURIComponent(patientId)}`
+      : "/appointments";
+    state.appointments = await api(path);
+    renderAppointments();
+    setConnection(true, "API подключён");
+  } catch (error) {
+    toast(`Не удалось загрузить записи: ${error.message}`, true);
+    $("#appointments-table").innerHTML = `<tr><td colspan="7"><div class="empty-state">Не удалось загрузить записи</div></td></tr>`;
+    $("#appointments-count").textContent = "";
+  }
+}
+
+function renderAppointments() {
+  const query = ($("#appointments-search").value || "").trim().toLowerCase();
+  const patientById = new Map(state.patients.map(patient => [String(patient.id), patient]));
+  const items = state.appointments.filter(appointment => {
+    const patient = patientById.get(String(appointment.patient_id));
+    const patientName = patient ? fullName(patient) : "";
+    const haystack = [
+      appointment.id, appointment.patient_id, patientName,
+      appointment.doctor_service_id, appointment.status,
+      appointment.starts_at, appointment.ends_at
+    ].join(" ").toLowerCase();
+    return haystack.includes(query);
+  });
+
+  $("#appointments-table").innerHTML = items.map(appointment => {
+    const patient = patientById.get(String(appointment.patient_id));
+    const patientLabel = patient ? fullName(patient) : `Пациент #${appointment.patient_id}`;
+    return `<tr>
+      <td><span class="person-name">№ ${esc(appointment.id)}</span></td>
+      <td><span class="person-name">${esc(patientLabel)}</span><span class="subtext">ID: ${esc(appointment.patient_id)}</span></td>
+      <td><span class="person-name">№ ${esc(appointment.doctor_service_id)}</span><span class="subtext">ID связи врача и услуги</span></td>
+      <td class="date-cell">${esc(formatAppointmentDateTime(appointment.starts_at))}</td>
+      <td class="date-cell">${esc(formatAppointmentDateTime(appointment.ends_at))}</td>
+      <td>${appointmentStatus(appointment.status)}</td>
+      <td><div class="row-actions"><button class="action-btn" data-view-appointment="${esc(appointment.id)}" data-patient-id="${esc(appointment.patient_id)}">Подробнее</button></div></td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="7"><div class="empty-state">${query ? "По заданным условиям записи не найдены" : "Записей пока нет"}</div></td></tr>`;
+
+  $("#appointments-count").textContent = `Показано: ${items.length} из ${state.appointments.length}`;
+}
+
+async function viewAppointment(patientId, appointmentId) {
+  try {
+    const appointment = await api(`/appointments/patient/${encodeURIComponent(patientId)}/${encodeURIComponent(appointmentId)}`);
+    const patient = state.patients.find(item => String(item.id) === String(appointment.patient_id));
+    $("#appointment-detail-title").textContent = `Запись № ${appointment.id}`;
+    const details = [
+      ["Пациент", patient ? `${fullName(patient)} · ID ${patient.id}` : `ID ${appointment.patient_id}`],
+      ["Связь врача и услуги", appointment.doctor_service_id],
+      ["Начало приёма", formatAppointmentDateTime(appointment.starts_at)],
+      ["Окончание приёма", formatAppointmentDateTime(appointment.ends_at)],
+      ["Статус", appointment.status]
+    ];
+    $("#appointment-detail-content").innerHTML = details.map(([label, value]) =>
+      `<div class="appointment-detail-row"><span>${esc(label)}</span><b>${esc(value ?? "—")}</b></div>`
+    ).join("");
+    $("#appointment-detail-dialog").showModal();
+  } catch (error) {
+    toast(`Не удалось получить запись: ${error.message}`, true);
+  }
+}
+
 function bindEvents() {
   $$(".nav-link").forEach(button => button.addEventListener("click", () => setPage(button.dataset.page)));
   $$("[data-go]").forEach(button => button.addEventListener("click", () => setPage(button.dataset.go)));
@@ -460,6 +577,11 @@ function bindEvents() {
   $("#refresh-services").addEventListener("click", loadServices);
   $("#refresh-assignments").addEventListener("click", loadAssignments);
   $("#refresh-schedules").addEventListener("click", loadScheduleDoctors);
+  $("#refresh-appointments").addEventListener("click", loadAppointments);
+  $("#appointments-patient-filter").addEventListener("change", loadAppointments);
+  $("#appointments-search").addEventListener("input", renderAppointments);
+  $("#appointment-detail-close").addEventListener("click", () => $("#appointment-detail-dialog").close());
+  $("#appointment-detail-dismiss").addEventListener("click", () => $("#appointment-detail-dialog").close());
   $("#patients-search").addEventListener("input", renderPatients);
   $("#doctors-search").addEventListener("input", renderDoctors);
   $("#services-search").addEventListener("input", renderServices);
@@ -472,6 +594,9 @@ function bindEvents() {
 
   document.addEventListener("click", event => {
     const t = event.target;
+    if (t.dataset.viewAppointment) {
+      viewAppointment(t.dataset.patientId, t.dataset.viewAppointment);
+    }
     if (t.dataset.editPatient) openPatientForm(state.patients.find(x => String(x.id) === t.dataset.editPatient));
     if (t.dataset.deletePatient) {
       const p = state.patients.find(x => String(x.id) === t.dataset.deletePatient);

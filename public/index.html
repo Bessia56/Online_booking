@@ -23,6 +23,7 @@
         <button class="nav-link" data-page="services"><span class="nav-icon">▤</span>Услуги</button>
         <button class="nav-link" data-page="assignments"><span class="nav-icon">⇄</span>Услуги врачей</button>
         <button class="nav-link" data-page="schedules"><span class="nav-icon">◷</span>Расписание врачей</button>
+        <button class="nav-link" data-page="appointments"><span class="nav-icon">▣</span>Записи пациентов</button>
       </nav>
       <div class="sidebar-bottom">
         <span class="connection-dot"></span>
@@ -65,9 +66,10 @@
             <button class="quick-action" data-go="services"><span class="quick-icon">▤</span><b>Услуги</b><small>Каталог и стоимость</small><span class="quick-arrow">→</span></button>
             <button class="quick-action" data-go="assignments"><span class="quick-icon">⇄</span><b>Услуги врачей</b><small>Назначение услуг</small><span class="quick-arrow">→</span></button>
             <button class="quick-action" data-go="schedules"><span class="quick-icon">◷</span><b>Расписание врачей</b><small>Рабочие интервалы</small><span class="quick-arrow">→</span></button>
+            <button class="quick-action" data-go="appointments"><span class="quick-icon">▣</span><b>Записи пациентов</b><small>Просмотр приёмов</small><span class="quick-arrow">→</span></button>
           </div>
         </div>
-        <div class="notice"><span>ⓘ</span><div><b>Информация</b><p>Этот интерфейс управляет справочниками и связями. Расписание и запись на приём можно подключить отдельными разделами после реализации соответствующих API-маршрутов.</p></div></div>
+        <div class="notice"><span>ⓘ</span><div><b>Информация</b><p>Управляйте справочниками, расписанием врачей и просматривайте записи пациентов. Создание и изменение записей можно добавить после реализации соответствующих API-маршрутов.</p></div></div>
       </section>
 
       <section id="patients-page" class="page">
@@ -146,6 +148,27 @@
         <div class="table-footer" id="schedules-count"></div>
       </section>
 
+      <section id="appointments-page" class="page">
+        <div class="section-toolbar">
+          <div><h2>Записи пациентов</h2><p>Просмотр всех записей и записей выбранного пациента</p></div>
+        </div>
+        <div class="content-card">
+          <div class="table-tools wrap-tools">
+            <label class="search-box"><span>⌕</span><input id="appointments-search" placeholder="Поиск по ID, пациенту, услуге или статусу"></label>
+            <select id="appointments-patient-filter" class="filter-select"><option value="">Все пациенты</option></select>
+            <button class="btn btn-secondary" id="refresh-appointments">↻ Обновить</button>
+          </div>
+          <div class="appointments-note">Дата и время отображаются в локальном часовом поясе браузера.</div>
+          <div class="table-wrap">
+            <table class="appointments-table">
+              <thead><tr><th>Запись</th><th>Пациент</th><th>Услуга врача</th><th>Начало</th><th>Окончание</th><th>Статус</th><th class="actions-col">Действия</th></tr></thead>
+              <tbody id="appointments-table"></tbody>
+            </table>
+          </div>
+          <div class="table-footer" id="appointments-count"></div>
+        </div>
+      </section>
+
       <div id="toast-region" class="toast-region" aria-live="polite"></div>
     </main>
   </div>
@@ -156,6 +179,12 @@
       <div id="dialog-fields" class="form-grid"></div>
       <div class="dialog-actions"><button type="button" class="btn btn-secondary" id="dialog-cancel">Отмена</button><button type="submit" class="btn btn-primary" id="dialog-submit">Сохранить</button></div>
     </form>
+  </dialog>
+
+  <dialog id="appointment-detail-dialog" class="dialog appointment-detail-dialog">
+    <div class="dialog-header"><div><div class="eyebrow">ЗАПИСЬ НА ПРИЁМ</div><h2 id="appointment-detail-title">Запись</h2></div><button type="button" class="icon-button" id="appointment-detail-close" aria-label="Закрыть">×</button></div>
+    <div id="appointment-detail-content" class="appointment-detail-content"></div>
+    <div class="dialog-actions"><button type="button" class="btn btn-secondary" id="appointment-detail-dismiss">Закрыть</button></div>
   </dialog>
 
   <dialog id="confirm-dialog" class="dialog confirm-dialog">
