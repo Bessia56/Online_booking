@@ -6,6 +6,7 @@ const patientsRoutes = require("./src/routes/patients.routes");
 const doctorsRoutes = require("./src/routes/doctors.routes");
 const servicesRoutes = require("./src/routes/services.routes");
 const doctorSchedulesRoutes = require("./src/routes/doctorSchedules.routes");
+const appointmentsRoutes = require("./src/routes/appointments.routes");
 
 app.use(express.json());
 
@@ -13,6 +14,7 @@ app.use("/patients", patientsRoutes);
 app.use("/doctors", doctorsRoutes);
 app.use("/services", servicesRoutes);
 app.use("/doctors/:doctorId/schedules", doctorSchedulesRoutes);
+app.use("/appointments", appointmentsRoutes);
 
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -68,9 +70,7 @@ app.use((err, req, res, next) => {
     else if (err.name !== "ValidationError") {
         console.error("[APPLICATION ERROR]", req.url, err.message);
     } 
-    else if (err.name !== "ValidationError") {
-        console.error("[APPLICATION ERROR]", req.url, err.message);
-    }
+   
 
     return res.status(statusCode).json({
         statusCode: "error",
