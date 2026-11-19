@@ -177,6 +177,31 @@ async function deleteDoctorService(doctorId, serviceId) {
     return doctorService;
 }
 
+/**
+ * Получает данные связи врача с услугой, включая продолжительность
+ * услуги и статус активности связи, врача и услуги.
+ *
+ * @param {string} doctorServiceId - ID связи врача с услугой.
+ * @returns {Promise<Object|undefined>} Объект с данными связи и статусами активности
+ * или undefined, если связь не найдена.
+ */
+async function getActiveDoctorServiceDetails(doctorServiceId) {
+    return await db("doctor_services as ds")
+        .join("doctors as d", "d.id", "ds.doctor_id")
+        .join("services as s", "s.id", "ds.service_id")
+        .select(
+            "ds.id",
+            "ds.doctor_id",
+            "ds.service_id",
+            "ds.duration_minutes",
+            "ds.is_active as doctor_service_is_active",
+            "d.is_active as doctor_is_active",
+            "s.is_active as service_is_active",
+        )
+        .where("ds.id", doctorServiceId)
+        .first();
+}
+
 module.exports = {
     createDoctorService,
     listDoctorServices,
@@ -185,4 +210,5 @@ module.exports = {
     deleteDoctorService,
     reactivateRelation,
     getDoctorServiceRelation,
+    getActiveDoctorServiceDetails,
 };
