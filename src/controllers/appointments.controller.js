@@ -1,5 +1,5 @@
-const appointmentsModel = require("../models/appointments.model");
-const patientsModel = require("../models/patients.model");
+const appointmentsModel = require("../model/appointments.model");
+const patientsModel = require("../model/patients.model");
 
 /**
  * Получает список всех записей на приём.
