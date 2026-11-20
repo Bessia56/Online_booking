@@ -1,5 +1,5 @@
 const API = ""; // Фронтенд раздаётся тем же Express-сервером, поэтому используем относительные URL.
-const state = { patients: [], doctors: [], services: [], assignments: [], schedules: [], appointments: [], currentDoctorId: null, currentScheduleDoctorId: null, currentAppointmentPatientId: "" };
+const state = { patients: [], doctors: [], services: [], assignments: [], schedules: [], appointments: [], currentDoctorId: null, currentScheduleDoctorId: null, currentAppointmentPatientId: "", appointmentServices: [] };
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
@@ -454,10 +454,112 @@ function formatAppointmentDateTime(value) {
   if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return String(value);
-  return new Intl.DateTimeFormat("ru-RU", {
+  return `${new Intl.DateTimeFormat("ru-RU", {
     day: "2-digit", month: "2-digit", year: "numeric",
-    hour: "2-digit", minute: "2-digit"
-  }).format(date);
+    hour: "2-digit", minute: "2-digit", timeZone: "Europe/Moscow"
+  }).format(date)} (МСК)`;
+}
+
+// datetime-local не содержит часовой пояс. API проекта принимает московское время.
+function toMoscowInputValue(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Moscow", year: "numeric", month: "2-digit",
+    day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23"
+  }).formatToParts(date);
+  const result = Object.fromEntries(parts.filter(p => p.type !== "literal").map(p => [p.type, p.value]));
+  return `${result.year}-${result.month}-${result.day}T${result.hour}:${result.minute}`;
+}
+
+function toMoscowIso(value) {
+  if (!value) throw new Error("Укажи дату и время приёма.");
+  // Отправляем явный +03:00, не полагаясь на часовой пояс устройства.
+  return `${value}:00+03:00`;
+}
+
+async function loadAppointmentServiceOptions() {
+  const doctors = await api("/doctors/filter?is_active=true");
+  const groups = await Promise.all(doctors.map(async doctor => {
+    const services = await api(`/doctors/${encodeURIComponent(doctor.id)}/services`);
+    return services.map(service => ({
+      value: String(service.id),
+      label: `${fullName(doctor)} — ${service.name} · ${service.duration_minutes} мин · ID ${service.id}`
+    }));
+  }));
+  state.appointmentServices = groups.flat();
+  return state.appointmentServices;
+}
+
+async function openAppointmentForm(appointment = null) {
+  try {
+    if (!state.patients.length) state.patients = await api("/patients");
+    const services = await loadAppointmentServiceOptions();
+    if (!state.patients.length) {
+      toast("Сначала добавь хотя бы одного пациента.", true);
+      return;
+    }
+    if (!services.length) {
+      toast("Нет активных услуг у активных врачей. Сначала назначь врачу услугу.", true);
+      return;
+    }
+
+    const fields = [
+      {
+        name: "patient_id", label: "Пациент", type: "select", required: true, full: true,
+        value: appointment?.patient_id ?? state.patients[0].id,
+        options: state.patients.map(patient => ({ value: patient.id, label: `${fullName(patient)} · ID ${patient.id}` }))
+      },
+      {
+        name: "doctor_service_id", label: "Врач и услуга", type: "select", required: true, full: true,
+        value: appointment?.doctor_service_id ?? services[0].value,
+        options: services
+      },
+      {
+        name: "starts_at", label: "Дата и время начала (МСК)", type: "datetime-local", required: true, full: true,
+        value: appointment ? toMoscowInputValue(appointment.starts_at) : "",
+        hint: "Время будет отправлено на сервер с часовым поясом +03:00. Окончание приёма рассчитает сервер."
+      }
+    ];
+
+    showDialog(appointment ? `Перенести запись № ${appointment.id}` : "Новая запись на приём", fields, async values => {
+      const payload = {
+        doctor_service_id: String(values.doctor_service_id),
+        starts_at: toMoscowIso(values.starts_at)
+      };
+      if (appointment) {
+        await api(`/appointments/${encodeURIComponent(appointment.id)}`, { method: "PATCH", body: payload });
+        toast("Запись обновлена");
+      } else {
+        payload.patient_id = String(values.patient_id);
+        await api("/appointments", { method: "POST", body: payload });
+        toast("Запись создана");
+      }
+      await loadAppointmentsPage();
+    });
+  } catch (error) {
+    toast(`Не удалось подготовить форму записи: ${error.message}`, true);
+  }
+}
+
+function openAppointmentStatusForm(appointment) {
+  const statuses = [
+    { value: "pending", label: "Ожидает подтверждения" },
+    { value: "confirmed", label: "Подтверждена" },
+    { value: "cancelled", label: "Отменена" },
+    { value: "completed", label: "Завершена" }
+  ];
+  showDialog(`Статус записи № ${appointment.id}`, [{
+    name: "status", label: "Новый статус", type: "select", required: true,
+    value: appointment.status, options: statuses
+  }], async values => {
+    await api(`/appointments/${encodeURIComponent(appointment.id)}/status`, {
+      method: "PATCH", body: { status: values.status }
+    });
+    toast("Статус записи изменён");
+    await loadAppointments();
+  });
 }
 
 function appointmentStatus(status) {
@@ -536,7 +638,12 @@ function renderAppointments() {
       <td class="date-cell">${esc(formatAppointmentDateTime(appointment.starts_at))}</td>
       <td class="date-cell">${esc(formatAppointmentDateTime(appointment.ends_at))}</td>
       <td>${appointmentStatus(appointment.status)}</td>
-      <td><div class="row-actions"><button class="action-btn" data-view-appointment="${esc(appointment.id)}" data-patient-id="${esc(appointment.patient_id)}">Подробнее</button></div></td>
+      <td><div class="row-actions">
+        <button class="action-btn" data-view-appointment="${esc(appointment.id)}" data-patient-id="${esc(appointment.patient_id)}">Подробнее</button>
+        ${appointment.status !== "cancelled" && appointment.status !== "completed" ? `<button class="action-btn" data-edit-appointment="${esc(appointment.id)}">Перенести</button>` : ""}
+        ${appointment.status !== "cancelled" ? `<button class="action-btn" data-status-appointment="${esc(appointment.id)}">Статус</button>` : ""}
+        ${appointment.status !== "cancelled" && appointment.status !== "completed" ? `<button class="action-btn danger" data-cancel-appointment="${esc(appointment.id)}">Отменить</button>` : ""}
+      </div></td>
     </tr>`;
   }).join("") || `<tr><td colspan="7"><div class="empty-state">${query ? "По заданным условиям записи не найдены" : "Записей пока нет"}</div></td></tr>`;
 
@@ -578,6 +685,7 @@ function bindEvents() {
   $("#refresh-assignments").addEventListener("click", loadAssignments);
   $("#refresh-schedules").addEventListener("click", loadScheduleDoctors);
   $("#refresh-appointments").addEventListener("click", loadAppointments);
+  $("#add-appointment").addEventListener("click", () => openAppointmentForm());
   $("#appointments-patient-filter").addEventListener("change", loadAppointments);
   $("#appointments-search").addEventListener("input", renderAppointments);
   $("#appointment-detail-close").addEventListener("click", () => $("#appointment-detail-dialog").close());
@@ -596,6 +704,27 @@ function bindEvents() {
     const t = event.target;
     if (t.dataset.viewAppointment) {
       viewAppointment(t.dataset.patientId, t.dataset.viewAppointment);
+    }
+    if (t.dataset.editAppointment) {
+      const appointment = state.appointments.find(x => String(x.id) === t.dataset.editAppointment);
+      if (appointment) openAppointmentForm(appointment);
+    }
+    if (t.dataset.statusAppointment) {
+      const appointment = state.appointments.find(x => String(x.id) === t.dataset.statusAppointment);
+      if (appointment) openAppointmentStatusForm(appointment);
+    }
+    if (t.dataset.cancelAppointment) {
+      const appointment = state.appointments.find(x => String(x.id) === t.dataset.cancelAppointment);
+      if (appointment) confirmAction(
+        "Отменить запись?",
+        `Запись № ${appointment.id} будет сохранена в базе, но получит статус «Отменена».`,
+        async () => {
+          await api(`/appointments/${encodeURIComponent(appointment.id)}`, { method: "DELETE" });
+          toast("Запись отменена");
+          await loadAppointments();
+        },
+        "Отменить запись"
+      );
     }
     if (t.dataset.editPatient) openPatientForm(state.patients.find(x => String(x.id) === t.dataset.editPatient));
     if (t.dataset.deletePatient) {
