@@ -92,6 +92,43 @@ async function updateAppointmentStatus(appointmentId, status) {
     return appointment;
 }
 
+/**
+ * Проверяет, занят ли врач в указанном временном интервале.
+ *
+ * @param {string|number} doctorId - ID врача.
+ * @param {string|Date} startsAt - Начало новой записи.
+ * @param {string|Date} endsAt - Окончание новой записи.
+ * @param {string|number|null} excludeAppointmentId - ID записи, которую исключаем при переносе.
+ * @returns {Promise<boolean>} Есть ли пересечение.
+ */
+async function hasAppointmentConflict(
+    doctorId,
+    startsAt,
+    endsAt,
+    excludeAppointmentId = null
+) {
+    const query = db("appointments")
+        .join(
+            "doctor_services",
+            "appointments.doctor_service_id",
+            "doctor_services.id"
+        )
+        .where("doctor_services.doctor_id", doctorId)
+        .where("appointments.status", "!=", "cancelled")
+        .where("appointments.starts_at", "<", endsAt)
+        .where("appointments.ends_at", ">", startsAt);
+
+    if (excludeAppointmentId !== null) {
+        query.where("appointments.id", "!=", excludeAppointmentId);
+    }
+
+    const conflict = await query
+        .select("appointments.id")
+        .first();
+
+    return Boolean(conflict);
+}
+
 module.exports = {
     listAppointments,
     listPatientAppointments,
@@ -100,4 +137,5 @@ module.exports = {
     updateAppointment,
     getAppointmentById,
     updateAppointmentStatus,
+    hasAppointmentConflict,
 };

@@ -4,7 +4,7 @@ const validate = require("../validator/validate");
 const appointmentsController =
     require("../controllers/appointments.controller");
 
-const { createAppointmentSchema, updateAppointmentStatusSchema } = require("../validator/appointments.schema");
+const { createAppointmentSchema, updateAppointmentSchema,updateAppointmentStatusSchema } = require("../validator/appointments.schema");
 
 
 /**
@@ -37,7 +37,11 @@ router.patch(
     validate(updateAppointmentStatusSchema),
     appointmentsController.updateAppointmentStatus
 );
-router.patch("/:id", appointmentsController.updateAppointment);
+router.patch(
+    "/:id",
+    validate(updateAppointmentSchema),
+    appointmentsController.updateAppointment
+);
 router.delete("/:id", appointmentsController.cancelAppointment);
 
 
