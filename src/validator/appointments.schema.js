@@ -33,6 +33,32 @@ const createAppointmentSchema = yup
     })
     .exact("Unknown fields are not allowed");
 
+    const updateAppointmentSchema = yup
+    .object({
+        doctor_service_id: yup
+            .string()
+            .matches(/^[1-9]\d*$/, "Invalid doctor_service_id")
+            .optional(),
+
+        starts_at: yup
+            .string()
+            .required()
+            .matches(ISO_DATE_REGEX, "Invalid date format")
+            .test(
+                "valid-date",
+                "Invalid date",
+                value => value === undefined || !Number.isNaN(Date.parse(value))
+            )
+            .optional(),
+    })
+    .exact("Unknown fields are not allowed")
+    .test(
+        "at-least-one-field",
+        "At least one field must be provided",
+        value => Object.keys(value || {}).length > 0
+    );
+
 module.exports = {
     createAppointmentSchema,
+    updateAppointmentSchema,
 };
