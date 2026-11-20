@@ -65,12 +65,25 @@ async function updateAppointment(appointmentId, appointmentData) {
 }
 
 /**
- * Удаление записи.
+ * Получение записи по ID.
  *
  * @param {string|number} appointmentId - ID записи.
- * @returns {Promise<Object>} Удаленная запись.
+ * @returns {Promise<Object|undefined>}
  */
-async function deleteAppointment(appointmentId,status) {
+async function getAppointmentById(appointmentId) {
+    return await db("appointments")
+        .where({ id: appointmentId })
+        .first();
+}
+
+/**
+ * Изменение статуса записи.
+ *
+ * @param {string|number} appointmentId - ID записи.
+ * @param {string} status - Новый статус.
+ * @returns {Promise<Object|undefined>}
+ */
+async function updateAppointmentStatus(appointmentId, status) {
     const [appointment] = await db("appointments")
         .where({ id: appointmentId })
         .update({ status })
@@ -85,5 +98,6 @@ module.exports = {
     getPatientAppointmentById,
     createAppointment,
     updateAppointment,
-    deleteAppointment,
+    getAppointmentById,
+    updateAppointmentStatus,
 };
