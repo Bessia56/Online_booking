@@ -35,7 +35,7 @@ const createAppointmentSchema = yup
     })
     .exact("Unknown fields are not allowed");
 
-    const updateAppointmentSchema = yup
+const updateAppointmentSchema = yup
     .object({
         doctor_service_id: yup
             .string()
@@ -49,7 +49,8 @@ const createAppointmentSchema = yup
             .test(
                 "valid-date",
                 "Invalid date",
-                value => value === undefined || !Number.isNaN(Date.parse(value))
+                (value) =>
+                    value === undefined || !Number.isNaN(Date.parse(value)),
             )
             .optional(),
     })
@@ -57,10 +58,23 @@ const createAppointmentSchema = yup
     .test(
         "at-least-one-field",
         "At least one field must be provided",
-        value => Object.keys(value || {}).length > 0
+        (value) => Object.keys(value || {}).length > 0,
     );
+
+const updateAppointmentStatusSchema = yup
+    .object({
+        status: yup
+            .string()
+            .oneOf(
+                ["pending", "confirmed", "cancelled", "completed"],
+                "Invalid appointment status",
+            )
+            .required("Status is required"),
+    })
+    .exact("Unknown fields are not allowed");
 
 module.exports = {
     createAppointmentSchema,
     updateAppointmentSchema,
+    updateAppointmentStatusSchema
 };
