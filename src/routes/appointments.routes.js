@@ -1,10 +1,10 @@
 const express = require("express");
 const router = express.Router();
-const validate = require("../validators/validate");
+const validate = require("../validator/validate");
 const appointmentsController =
     require("../controllers/appointments.controller");
 
-const { createAppointmentSchema } = require("../validators/appointments.schema");
+const { createAppointmentSchema, updateAppointmentStatusSchema } = require("../validator/appointments.schema");
 
 
 /**
@@ -34,6 +34,7 @@ router.get(
 );
 router.patch(
     "/:id/status",
+    validate(updateAppointmentStatusSchema),
     appointmentsController.updateAppointmentStatus
 );
 router.patch("/:id", appointmentsController.updateAppointment);
