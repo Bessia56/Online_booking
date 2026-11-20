@@ -36,8 +36,8 @@ function getMoscowDateParts(date) {
 
     return Object.fromEntries(
         parts
-            .filter(part => part.type !== "literal")
-            .map(part => [part.type, part.value])
+            .filter((part) => part.type !== "literal")
+            .map((part) => [part.type, part.value]),
     );
 }
 
@@ -98,31 +98,26 @@ function isAppointmentWithinSchedule(startsAt, endsAt, schedules) {
         Number(endParts.second);
 
     // Проверяем, подходит ли хотя бы один рабочий интервал
-    return schedules.some(schedule => {
+    return schedules.some((schedule) => {
         if (Number(schedule.day_of_week) !== dayOfWeek) {
             return false;
         }
 
-        const [startHour, startMinute, startSecond = 0] =
-            String(schedule.start_time).split(":").map(Number);
+        const [startHour, startMinute, startSecond = 0] = String(
+            schedule.start_time,
+        )
+            .split(":")
+            .map(Number);
 
-        const [endHour, endMinute, endSecond = 0] =
-            String(schedule.end_time).split(":").map(Number);
+        const [endHour, endMinute, endSecond = 0] = String(schedule.end_time)
+            .split(":")
+            .map(Number);
 
-        const scheduleStart =
-            startHour * 3600 +
-            startMinute * 60 +
-            startSecond;
+        const scheduleStart = startHour * 3600 + startMinute * 60 + startSecond;
 
-        const scheduleEnd =
-            endHour * 3600 +
-            endMinute * 60 +
-            endSecond;
+        const scheduleEnd = endHour * 3600 + endMinute * 60 + endSecond;
 
-        return (
-            startSeconds >= scheduleStart &&
-            endSeconds <= scheduleEnd
-        );
+        return startSeconds >= scheduleStart && endSeconds <= scheduleEnd;
     });
 }
 
@@ -225,7 +220,7 @@ async function createAppointment(req, res) {
     // Получаем связь врача с услугой
     const doctorService =
         await doctorServicesModel.getActiveDoctorServiceDetails(
-            doctor_service_id
+            doctor_service_id,
         );
 
     if (!doctorService) {
@@ -248,7 +243,7 @@ async function createAppointment(req, res) {
     // Рассчитываем окончание приёма
     const ends_at = new Date(
         new Date(starts_at).getTime() +
-            doctorService.duration_minutes * 60 * 1000
+            doctorService.duration_minutes * 60 * 1000,
     ).toISOString();
 
     // Определяем день недели по московскому времени
@@ -267,22 +262,34 @@ async function createAppointment(req, res) {
     const dayOfWeek = weekdays[startParts.weekday];
 
     // Получаем активное расписание врача на этот день
-    const schedules =
-        await doctorSchedules.getDoctorSchedulesByDay(
-            doctorService.doctor_id,
-            dayOfWeek
-        );
+    const schedules = await doctorSchedulesModel.getDoctorSchedulesByDay(
+        doctorService.doctor_id,
+        dayOfWeek,
+    );
 
     // Проверяем, помещается ли приём в рабочее время
     const isWithinSchedule = isAppointmentWithinSchedule(
         starts_at,
         ends_at,
-        schedules
+        schedules,
     );
 
     if (!isWithinSchedule) {
         return res.status(400).json({
             message: "Appointment is outside doctor's working hours",
+        });
+    }
+
+    // Проверяем, нет ли другой записи у этого врача
+    const hasConflict = await appointmentsModel.hasAppointmentConflict(
+        doctorService.doctor_id,
+        starts_at,
+        ends_at,
+    );
+
+    if (hasConflict) {
+        return res.status(409).json({
+            message: "Doctor already has an appointment at this time",
         });
     }
 
@@ -296,7 +303,6 @@ async function createAppointment(req, res) {
 
     return res.status(201).json(appointment);
 }
-
 
 /**
  * Обновляет данные существующей записи.
@@ -327,7 +333,7 @@ async function updateAppointment(req, res) {
     // Получаем информацию об услуге и враче
     const doctorService =
         await doctorServicesModel.getActiveDoctorServiceDetails(
-            updatedDoctorServiceId
+            updatedDoctorServiceId,
         );
 
     if (!doctorService) {
@@ -352,7 +358,7 @@ async function updateAppointment(req, res) {
     // Рассчитываем новое окончание по продолжительности услуги
     const updatedEndsAt = new Date(
         new Date(updatedStartsAt).getTime() +
-        doctorService.duration_minutes * 60 * 1000
+            doctorService.duration_minutes * 60 * 1000,
     ).toISOString();
 
     // Проверяем корректность временного интервала
@@ -378,32 +384,41 @@ async function updateAppointment(req, res) {
     const dayOfWeek = weekdays[startParts.weekday];
 
     // Получаем расписание врача
-    const schedules =
-        await doctorSchedulesModel.getDoctorSchedulesByDay(
-            doctorService.doctor_id,
-            dayOfWeek
-        );
+    const schedules = await doctorSchedulesModel.getDoctorSchedulesByDay(
+        doctorService.doctor_id,
+        dayOfWeek,
+    );
 
     // Проверяем соответствие расписанию
     if (
-        !isAppointmentWithinSchedule(
-            updatedStartsAt,
-            updatedEndsAt,
-            schedules
-        )
+        !isAppointmentWithinSchedule(updatedStartsAt, updatedEndsAt, schedules)
     ) {
         return res.status(400).json({
             error: "Appointment is outside doctor's working hours",
         });
     }
 
-    // Сохраняем изменения
-    const updatedAppointment =
-        await appointmentsModel.updateAppointment(id, {
-            doctor_service_id: updatedDoctorServiceId,
-            starts_at: updatedStartsAt,
-            ends_at: updatedEndsAt,
+    // Проверяем пересечение с другими записями врача
+    // Текущую запись исключаем из проверки
+    const hasConflict = await appointmentsModel.hasAppointmentConflict(
+        doctorService.doctor_id,
+        updatedStartsAt,
+        updatedEndsAt,
+        id,
+    );
+
+    if (hasConflict) {
+        return res.status(409).json({
+            error: "Doctor already has an appointment at this time",
         });
+    }
+
+    // Сохраняем изменения
+    const updatedAppointment = await appointmentsModel.updateAppointment(id, {
+        doctor_service_id: updatedDoctorServiceId,
+        starts_at: updatedStartsAt,
+        ends_at: updatedEndsAt,
+    });
 
     return res.status(200).json(updatedAppointment);
 }
