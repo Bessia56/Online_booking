@@ -201,7 +201,7 @@ async function removeServiceFromDoctor(req, res) {
  * @returns {Promise<import("express").Response | void>}
  */
 async function listDoctorServices(req, res) {
-    const { doctorId } = req.params;
+    const doctorId = req.params.id;
 
     const doctorServices =
         await doctorServicesModel.listDoctorServices(doctorId);
