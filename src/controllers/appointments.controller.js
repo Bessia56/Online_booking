@@ -14,6 +14,16 @@ const APPOINTMENT_STATUSES = [
 ];
 
 /**
+ * Проверяет, что дата записи находится в будущем.
+ *
+ * @param {string|Date} startsAt - Дата и время начала записи.
+ * @returns {boolean}
+ */
+function isAppointmentInFuture(startsAt) {
+    return new Date(startsAt).getTime() > Date.now();
+}
+
+/**
  * Получает компоненты даты и времени в московском часовом поясе.
  *
  * @param {string|Date} date - Дата.
@@ -208,6 +218,12 @@ function isValidAppointmentPeriod(startsAt, endsAt) {
 async function createAppointment(req, res) {
     const { patient_id, doctor_service_id, starts_at } = req.body;
 
+    //Проверяет, что дата записи находится в будущем
+    if (!isAppointmentInFuture(starts_at)) {
+        return res.status(400).json({
+            message: "Appointment must be scheduled in the future",
+        });
+    }
     // Проверяем существование пациента
     const patient = await patientsModel.getPatientById(patient_id);
 
@@ -355,6 +371,12 @@ async function updateAppointment(req, res) {
     // Определяем новое начало записи
     const updatedStartsAt = starts_at ?? appointment.starts_at;
 
+    if (!isAppointmentInFuture(updatedStartsAt)) {
+        return res.status(400).json({
+            error: "Appointment must be scheduled in the future",
+        });
+    }
+    
     // Рассчитываем новое окончание по продолжительности услуги
     const updatedEndsAt = new Date(
         new Date(updatedStartsAt).getTime() +
